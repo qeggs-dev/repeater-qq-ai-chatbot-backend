@@ -1,0 +1,20 @@
+[
+    {
+        "Name": "Deepseek",
+        "ApiKeyEnv": "DEEPSEEK_API_KEY",
+        "URL": "https://api.deepseek.com/v1",
+        "models": [
+            {
+                "Name": "Deepseek R1",
+                "Id": "deepseek-reasoner",
+                "Type": "reasoner"
+            },
+            {
+                "Name": "Deepseek V3",
+                "Id": "deepseek-chat",
+                "Type": "chat"
+            }
+
+        ]
+    }
+]

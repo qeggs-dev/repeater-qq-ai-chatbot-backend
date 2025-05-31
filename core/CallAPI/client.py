@@ -41,18 +41,18 @@ class Client:
         self.semaphore = asyncio.Semaphore(self.max_concurrency)
         self.tasks = set()  # 存储运行中的任务
     # region > 协程池管理
-    async def _submit(self, coro: Awaitable[Any]) -> Any:
+    async def _submit(self, coro: Awaitable[Any], user_id: str) -> Any:
         """提交任务到协程池，并等待返回结果"""
         async with self.semaphore:  # 控制并发数
             task = asyncio.create_task(coro)
             self.tasks.add(task)
-            logger.debug(f'Created a new task for {inspect.currentframe().f_back.f_code.co_name} ({len(self.tasks)}/{self.max_concurrency})')
+            logger.debug(f'Created a new task for {inspect.currentframe().f_back.f_code.co_name} ({len(self.tasks)}/{self.max_concurrency})', user_id = user_id)
             try:
                 result = await task
                 return result
             finally:
                 self.tasks.remove(task)
-                logger.debug(f'Removed a task ({len(self.tasks)}/{self.max_concurrency})')
+                logger.debug(f'Removed a task ({len(self.tasks)}/{self.max_concurrency})', user_id = user_id)
         
     async def _shutdown(self):
         """关闭池，等待所有任务完成"""
@@ -64,16 +64,18 @@ class Client:
         self.semaphore = asyncio.Semaphore(new_max)
     # endregion
 
-    async def submit_Request(self, request: Request) -> Response:
+    async def submit_Request(self, user_id:str, request: Request) -> Response:
         """提交请求到协程池，并等待返回结果"""
-        return await self._submit(self._call_api(request))
+        return await self._submit(self._call_api(user_id, request), user_id=user_id)
     
-    async def _call_api(self, request: Request) -> Response:
+    async def _call_api(self, user_id:str, request: Request) -> Response:
         """调用API"""
+        logger.info(f"Created OpenAI Client", user_id = user_id)
         client = AsyncOpenAI(base_url=request.url, api_key=request.key)
 
         if not request.context:
             raise ValueError("context is required")
+        logger.info(f"Make Request", user_id = user_id)
         request_start_time = time.time_ns()
         response = await client.chat.completions.create(
             model = request.model,
@@ -93,6 +95,8 @@ class Client:
         chunk_count:int = 0
         empty_chunk_count:int = 0
         model_response = Response()
+        logger.info(f"Start Streaming", user_id = user_id)
+        print("\n\n", end="", flush=True)
         stream_processing_start_time:int = time.time_ns()
         last_chunk_time:int = 0
         chunk_times:list[int] = []
@@ -106,7 +110,7 @@ class Client:
                 last_chunk_time = delta_data.created * (10**9)
             else:
                 this_chunk_time = time.time_ns()
-                chunk_times.append(last_chunk_time - this_chunk_time)
+                chunk_times.append(this_chunk_time - last_chunk_time)
                 last_chunk_time = this_chunk_time
             
             if not model_response.id:
@@ -151,47 +155,47 @@ class Client:
         model_response.context = model_response_context
 
         # 打印统计日志
-        logger.info("============= API INFO =============")
-        logger.info(f"API_URL: {request.url}")
-        logger.info(f"MODEL: {model_response.model}")
-        logger.info("============ Chunk Count ===========")
-        logger.info(f"Total Chunk: {chunk_count}")
+        logger.info("============= API INFO =============", user_id = user_id)
+        logger.info(f"API_URL: {request.url}", user_id = user_id)
+        logger.info(f"MODEL: {model_response.model}", user_id = user_id)
+        logger.info("============ Chunk Count ===========", user_id = user_id)
+        logger.info(f"Total Chunk: {chunk_count}", user_id = user_id)
         if empty_chunk_count > 0:
-            logger.info(f"Empty Chunk: {empty_chunk_count}")
-            logger.info(f"Non-Empty Chunk: {chunk_count - empty_chunk_count}")
-        logger.info(f"Chunk effective ratio: {1 - empty_chunk_count / chunk_count :.2%}")
-        logger.info("========== Time Statistics =========")
-        logger.info(f"Total Time: {format_deltatime_ns(stream_processing_end_time - request_start_time, '%H:%M:%S.%n')}")
-        logger.info(f"API Request Time: {format_deltatime_ns(request_end_time - request_start_time, '%H:%M:%S.%n')}")
-        logger.info(f"Stream Processing Time: {format_deltatime_ns(stream_processing_end_time - stream_processing_start_time, '%H:%M:%S.%n')}")
+            logger.info(f"Empty Chunk: {empty_chunk_count}", user_id = user_id)
+            logger.info(f"Non-Empty Chunk: {chunk_count - empty_chunk_count}", user_id = user_id)
+        logger.info(f"Chunk effective ratio: {1 - empty_chunk_count / chunk_count :.2%}", user_id = user_id)
+        logger.info("========== Time Statistics =========", user_id = user_id)
+        logger.info(f"Total Time: {format_deltatime_ns(stream_processing_end_time - request_start_time, '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"API Request Time: {format_deltatime_ns(request_end_time - request_start_time, '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"Stream Processing Time: {format_deltatime_ns(stream_processing_end_time - stream_processing_start_time, '%H:%M:%S.%n')}", user_id = user_id)
 
         created_utc_dt = datetime.fromtimestamp(model_response.created, tz=timezone.utc)
         created_utc_str = created_utc_dt.strftime('%Y-%m-%d %H:%M:%S UTC')
-        logger.info(f"Created Time: {created_utc_str} UTC")
+        logger.info(f"Created Time: {created_utc_str}", user_id = user_id)
 
         created_local_dt = datetime.fromtimestamp(model_response.created)
         created_local_str = created_local_dt.strftime("%Y-%m-%d %H:%M:%S")
-        logger.info(f"Created Time: {created_local_str} (Local Time)")
+        logger.info(f"Created Time: {created_local_str}", user_id = user_id)
 
-        logger.info(f"Chunk Average Spawn Time: {format_deltatime_ns(sum(chunk_times) // len(chunk_times), '%H:%M:%S.%n')}")
-        logger.info(f"Chunk Max Spawn Time: {format_deltatime_ns(max(chunk_times), '%H:%M:%S.%n')}")
-        logger.info(f"Chunk Min Spawn Time: {format_deltatime_ns(min(chunk_times), '%H:%M:%S.%n')}")
+        logger.info(f"Chunk Average Spawn Time: {format_deltatime_ns(sum(chunk_times) // len(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"Chunk Max Spawn Time: {format_deltatime_ns(max(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"Chunk Min Spawn Time: {format_deltatime_ns(min(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
 
-        logger.info("=========== Token Count ============")
-        logger.info(f"Total Tokens: {model_response.token_usage.total_tokens}")
-        logger.info(f"Total Prompt Tokens: {model_response.token_usage.prompt_tokens}")
-        logger.info(f"Total Completion Tokens: {model_response.token_usage.completion_tokens}")
-        logger.info(f"Total Cache Hit Count: {model_response.token_usage.prompt_cache_hit_tokens}")
-        logger.info(f"Total Cache Miss Count: {model_response.token_usage.prompt_cache_miss_tokens}")
-        logger.info(f"Token Cache Hit Ratio: {model_response.token_usage.prompt_cache_hit_tokens / model_response.token_usage.prompt_tokens :.2%}")
-        logger.info(f"Token Average Generation Rate: {(stream_processing_end_time - stream_processing_start_time)}")
+        logger.info("=========== Token Count ============", user_id = user_id)
+        logger.info(f"Total Tokens: {model_response.token_usage.total_tokens}", user_id = user_id)
+        logger.info(f"Prompt Tokens: {model_response.token_usage.prompt_tokens}", user_id = user_id)
+        logger.info(f"Completion Tokens: {model_response.token_usage.completion_tokens}", user_id = user_id)
+        logger.info(f"Cache Hit Count: {model_response.token_usage.prompt_cache_hit_tokens}", user_id = user_id)
+        logger.info(f"Cache Miss Count: {model_response.token_usage.prompt_cache_miss_tokens}", user_id = user_id)
+        logger.info(f"Cache Hit Ratio: {model_response.token_usage.prompt_cache_hit_tokens / model_response.token_usage.prompt_tokens :.2%}", user_id = user_id)
+        logger.info(f"Average Generation Rate: {model_response.token_usage.completion_tokens / ((stream_processing_end_time - stream_processing_start_time) / 1e9):.2f} /s", user_id = user_id)
 
-        logger.info("========== Content Length ==========")
-        logger.info(f"Total Content Length: {len(model_response.context.reasoning_content) + len(model_response.context.new_content)}")
-        logger.info(f"Total Reasoning Content Length: {len(model_response.context.reasoning_content)}")
-        logger.info(f"Total New Content Length: {len(model_response.context.new_content)}")
+        logger.info("========== Content Length ==========", user_id = user_id)
+        logger.info(f"Total Content Length: {len(model_response.context.reasoning_content) + len(model_response.context.new_content)}", user_id = user_id)
+        logger.info(f"Reasoning Content Length: {len(model_response.context.reasoning_content)}", user_id = user_id)
+        logger.info(f"New Content Length: {len(model_response.context.new_content)}", user_id = user_id)
 
-        logger.info("====================================")
+        logger.info("====================================", user_id = user_id)
         return model_response
         
         

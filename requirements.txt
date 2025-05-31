@@ -1,0 +1,10 @@
+aiofiles
+environs
+fastapi
+python-multipart
+loguru
+openai
+orjson
+uvicorn
+markdown
+imgkit

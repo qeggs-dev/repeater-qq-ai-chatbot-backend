@@ -1,9 +1,13 @@
 # ==== 标准库 ==== #
 import asyncio
+import sys
+import time
 
 # ==== 第三方库 ==== #
 from environs import Env
 from loguru import logger
+import aiofiles
+import orjson
 
 # ==== 自定义库 ==== #
 from .CallAPI import (
@@ -25,16 +29,26 @@ from .ApiInfo import (
     ApiInfo,
     ApiGroup
 )
-from TimeParser import get_birthday_countdown
+from TimeParser import (
+    format_timestamp,
+    get_birthday_countdown,
+    date_to_zodiac,
+    format_timestamp,
+    calculate_age
+)
 
 # ==== 本模块代码 ==== #
 env = Env()
 
-__version__ = '4.0.0.0'
+__version__ = '4.0.0.0 Beta'
 
 class Core:
     def __init__(self, max_concurrency: int = None):
         self.client = Client(env.int('MAX_CONCURRENCY', 10) if max_concurrency is None else max_concurrency)
+
+        logger.remove()  # 移除默认处理器
+        logger.add(sys.stderr, format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{extra[user_id]}</cyan> - <level>{message}</level>")
+
         self.lock = asyncio.Lock()
         self.context_manager = ContextManager()
         self.prompt_manager = PromptManager()
@@ -68,14 +82,30 @@ class Core:
         lock = await self.get_session_lock(user_id)
 
         async with lock:
+            async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
+                fdata = await f.read()
+                try:
+                    nickname_mapping = orjson.loads(fdata)
+                except orjson.JSONDecodeError:
+                    nickname_mapping = {}
+
+            if user_name in nickname_mapping:
+                user_name = nickname_mapping[user_name]
+            elif user_id in nickname_mapping:
+                user_name = nickname_mapping[user_id]
+
+            config = await self.user_config_manager.load(user_id=user_id)
+            if not config or not isinstance(config, dict):
+                config = {}
+
             context_loader = ContextLoader(
                 config=self.user_config_manager,
                 prompt=self.prompt_manager,
                 context=self.context_manager,
                 prompt_vp = await self.promptvariable.get_prompt_variable(
                     user_id = user_id,
-                    username = user_name,
-                    BirthdayCountdown = get_birthday_countdown(
+                    user_name = user_name,
+                    BirthdayCountdown = lambda **kw: get_birthday_countdown(
                         env.int("BIRTHDAY_MONTH"),
                         env.int("BIRTHDAY_DAY"),
                         name=env.str(
@@ -84,7 +114,11 @@ class Core:
                         )
                     ),
                     model_type = model_type,
-                    print_chunk = str(print_chunk)
+                    print_chunk = str(print_chunk),
+                    birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
+                    zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
+                    time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z%z'),
+                    age = lambda **kw: calculate_age(env.int("BIRTHDAY_YEAR"), env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY"), offset_timezone = config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)))
                 )
             )
 
@@ -99,12 +133,9 @@ class Core:
             request.url = api.url
             request.model = api.model_id
             request.key = api.api_key
-            logger.info(f"API URL: {api.url}")
-            logger.info(f"API Model: {api.model_name}")
-
-            config = await self.user_config_manager.load(user_id=user_id)
-            if not config or not isinstance(config, dict):
-                config = {}
+            logger.info(f"API URL: {api.url}", user_id = user_id)
+            logger.info(f"API Model: {api.model_name}", user_id = user_id)
+            logger.info(f"Message: \n{request.context.new_content}", user_id = user_id)
 
             request.temperature = config.get("temperature", 1.0)
             request.max_tokens = config.get("max_tokens", 1024)
@@ -113,11 +144,11 @@ class Core:
             request.presence_penalty = config.get("presence_penalty", 0.0)
             request.print_chunk = print_chunk
 
-            response = await self.api_client.submit_Request(request)
+            response = await self.api_client.submit_Request(user_id=user_id, request=request)
 
             await context_loader.save(user_id=user_id, context=response.context)
 
-            logger.success(f"{user_id} API call successful")
+            logger.success(f"API call successful", user_id = user_id)
             
             return {
                 "reasoning_content": response.context.reasoning_content,

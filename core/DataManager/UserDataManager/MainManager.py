@@ -17,7 +17,7 @@ class MainManager:
     
     async def load(self, user_id: str, default: Any = None) -> Any:
         user_id = await sanitize_filename_async(user_id)
-        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, 'ParallelData'))
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
         metadata = await manager.load_metadata()
         if isinstance(metadata, dict):
             item = metadata.get('default_item', 'default')
@@ -27,7 +27,7 @@ class MainManager:
     
     async def save(self, user_id: str, data: Any) -> None:
         user_id = await sanitize_filename_async(user_id)
-        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, 'ParallelData'))
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
         metadata = await manager.load_metadata()
         if isinstance(metadata, dict):
             item = metadata.get('default_item', 'default')
@@ -37,7 +37,7 @@ class MainManager:
     
     async def delete(self, user_id: str) -> None:
         user_id = await sanitize_filename_async(user_id)
-        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, 'ParallelData'))
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
         metadata = await manager.load_metadata()
         if isinstance(metadata, dict):
             item = metadata.get('default_item', 'default')
@@ -47,7 +47,7 @@ class MainManager:
     
     async def set_default_item(self, user_id: str, item: str) -> None:
         user_id = await sanitize_filename_async(user_id)
-        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, 'ParallelData'))
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
         metadata = await manager.load_metadata()
         if isinstance(metadata, dict):
             metadata['default_item'] = item
@@ -57,9 +57,15 @@ class MainManager:
 
     async def get_default_item(self, user_id: str) -> str:
         user_id = await sanitize_filename_async(user_id)
-        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, 'ParallelData'))
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
         metadata = await manager.load_metadata()
         if isinstance(metadata, dict):
             return metadata.get('default_item', 'default')
         else:
             return 'default'
+
+    async def get_all_user_id(self) -> list:
+        return [f.name for f in (env.path('USER_DATA_DIR') / self.base_name).iterdir() if f.is_dir()]
+
+    async def get_all_item(self, user_id: str) -> list:
+        return [f.name for f in (env.path('USER_DATA_DIR') / self.base_name / user_id / "ParallelData").iterdir() if f.is_dir()]

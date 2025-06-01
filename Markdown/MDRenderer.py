@@ -2,16 +2,18 @@ import markdown
 import imgkit
 from environs import Env
 from pathlib import Path
+from .styles import STYLES
 
 # 初始化环境变量
 env = Env()
-env.read_env()  # 读取 .env 文件
 
+# 修改 markdown_to_image 函数
 def markdown_to_image(
     markdown_text: str,
     output_path: str,
     width: int = 800,
     css: str = None,
+    style: str = "light",
     options: dict = None
 ) -> str:
     """
@@ -21,7 +23,8 @@ def markdown_to_image(
     - markdown_text: Markdown 文本
     - output_path: 输出图片路径 (.png/.jpg)
     - width: 目标宽度 (像素)
-    - css: 自定义 CSS 样式
+    - css: 自定义 CSS 样式 (优先级高于style参数)
+    - style: 预设样式名称 (light/dark/pink/blue/green)
     - options: wkhtmltoimage 高级选项
     
     返回: 输出文件路径
@@ -31,28 +34,18 @@ def markdown_to_image(
     
     # 2. 构建完整 HTML
     if css is None:
-        css = f"""
-        body {{
-            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-            width: {width}px;
-            padding: 20px;
-            margin: 0 auto;
-            line-height: 1.6;
-            color: #333;
-        }}
-        pre {{
-            background: #f8f8f8;
-            padding: 1em;
-            border-radius: 5px;
-            overflow: auto;
-        }}
-        """
+        # 使用预设样式
+        css = STYLES.get(style, STYLES["light"])
+    
+    # 添加自适应宽度
+    css += f"\nbody {{ width: {width - 60}px; }}"
     
     full_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>{css}</style>
     </head>
     <body>{html_content}</body>
@@ -62,8 +55,6 @@ def markdown_to_image(
     # 3. 配置转换选项
     default_options = {
         'enable-local-file-access': None,  # 允许本地文件
-        # 'width': width,                 # 控制输出宽度
-        # 'disable-smart-shrinking': None,  # 禁止自动缩放
         'encoding': "UTF-8",              # 编码设置
         'quiet': ''                       # 静默模式
     }
@@ -81,39 +72,40 @@ def markdown_to_image(
     
     return str(Path(output_path).resolve())
 
-# 使用示例
+# 修改使用示例
 if __name__ == "__main__":
     example_markdown = """
-    # 自适应 Markdown 渲染
-
-    ![示例图片](https://via.placeholder.com/300x200)
-
+    # 主题样式演示
+    
+    ## 代码块示例
     ```python
-    def hello():
-        print("代码高亮保留")
+    def greet(name):
+        print(f"Hello, {name}!")
+    
+    greet("World")
     ```
-
-    - 列表项1
-    - 列表项2
-
-    > 引用内容也会正确适配
+    
+    ## 列表示例
+    - 项目 1
+    - 项目 2
+    - 项目 3
+    
+    ## 引用
+    > 这是优雅的引用样式
+    
+    ## 表格
+    | 姓名   | 年龄 | 职业    |
+    |--------|------|---------|
+    | Alice  | 28   | 工程师  |
+    | Bob    | 32   | 设计师  |
     """
     
-    output_file = markdown_to_image(
-        markdown_text=example_markdown,
-        output_path="output_demo.png",
-        width=600,
-        css="""
-        body {
-            background-color: #f9f9f9;
-            border: 1px solid #eee;
-            border-radius: 5px;
-        }
-        h1 {
-            color: #2c3e50;
-            border-bottom: 2px solid #eee;
-        }
-        """
-    )
-    
-    print(f"图片已生成: {output_file}")
+    # 生成所有样式示例
+    for style_name in ["light", "dark", "pink", "blue", "green"]:
+        output_file = markdown_to_image(
+            markdown_text=example_markdown,
+            output_path=f"output_{style_name}.png",
+            width=800,
+            style=style_name
+        )
+        print(f"生成 {style_name} 主题: {output_file}")

@@ -65,9 +65,7 @@ class Core:
         async with self.lock:
             if user_id not in self.session_locks:
                 self.session_locks[user_id] = asyncio.Lock()
-                lock = self.session_locks[user_id]
-            else:
-                lock = self.session_locks[user_id]
+            lock = self.session_locks[user_id]
         return lock
 
     async def Chat(
@@ -90,6 +88,7 @@ class Core:
                     nickname_mapping = {}
 
             if user_name in nickname_mapping:
+                logger.info(f"User Name [{user_name}] -> [{nickname_mapping[user_name]}]", user_id=user_id)
                 user_name = nickname_mapping[user_name]
             elif user_id in nickname_mapping:
                 user_name = nickname_mapping[user_id]
@@ -117,7 +116,7 @@ class Core:
                     print_chunk = str(print_chunk),
                     birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
                     zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
-                    time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z%z'),
+                    time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z'),
                     age = lambda **kw: calculate_age(env.int("BIRTHDAY_YEAR"), env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY"), offset_timezone = config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)))
                 )
             )
@@ -136,6 +135,7 @@ class Core:
             logger.info(f"API URL: {api.url}", user_id = user_id)
             logger.info(f"API Model: {api.model_name}", user_id = user_id)
             logger.info(f"Message: \n{request.context.new_content}", user_id = user_id)
+            logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.temperature = config.get("temperature", 1.0)
             request.max_tokens = config.get("max_tokens", 1024)

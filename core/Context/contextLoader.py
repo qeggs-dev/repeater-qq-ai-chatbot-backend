@@ -48,7 +48,11 @@ class ContextLoader:
         default_prompt_dir = env.path("DEFAULT_PROMPT_DIR", Path())
         if default_prompt_dir.exists():
             # 如果存在默认提示词文件，则加载默认提示词文件
-            parset_prompt_name = await self.config.load(user_id, env.str("PARSET_PROMPT_NAME"))
+            config = await self.config.load(user_id)
+            if not isinstance(config, dict):
+                config = {}
+
+            parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME"))
 
             default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
             if default_prompt_file.exists():
@@ -72,6 +76,8 @@ class ContextLoader:
     async def load(self, user_id: str, New_Message: str, Message_Role: str = 'user', Message_Role_Name: str | None = None, load_prompt: bool = True) -> ContextObject:
         if load_prompt:
             context = await self._load_prompt(ContextObject(), user_id=user_id)
+        else:
+            context = ContextObject()
         context = await self._load_context(
             context = context,
             user_id = user_id,

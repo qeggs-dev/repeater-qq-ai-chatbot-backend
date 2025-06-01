@@ -34,6 +34,19 @@ from TimeParser import (
 # ==== 本模块代码 ==== #
 env = Env()
 
+def remove_keys_from_dicts(dict_list: list[dict], keys_to_remove: list[str] | set[str]):
+    """
+    从字典列表中删除指定的键
+    
+    :param dict_list: 包含字典的列表
+    :param keys_to_remove: 需要删除的键列表
+    :return: 新的字典列表（原列表不被修改）
+    """
+    return [
+        {k: v for k, v in d.items() if k not in keys_to_remove}
+        for d in dict_list
+    ]
+
 class Client:
     def __init__(self, max_concurrency: int | None = None):
         # 协程池
@@ -85,7 +98,7 @@ class Client:
             max_tokens = request.max_tokens,
             stop = request.stop,
             stream = True,
-            messages = request.context.full_context
+            messages = remove_keys_from_dicts(request.context.full_context, {"reasoning_content"}) if not request.context.prefix else request.context.full_context,
         )
         request_end_time = time.time_ns()
 
@@ -126,7 +139,7 @@ class Client:
                 if request.print_chunk:
                     if not model_response_context.reasoning_content:
                         print('\n\n', end="", flush=True)
-                    print(delta_data.reasoning_content, end="", flush=True)
+                    print(f"\033[7m{delta_data.reasoning_content}\033[0m", end="", flush=True)
                 model_response_context.reasoning_content += delta_data.reasoning_content
             
             if delta_data.content:

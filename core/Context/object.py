@@ -154,13 +154,13 @@ class ContextObject:
                     "content": self.new_content,
                 }
                 if self.new_content_role_name:
-                    content["name"] = self.new_content_role_name
+                    assistant_content["name"] = self.new_content_role_name
                 if self.prefix:
-                    content["prefix"] = self.prefix
+                    assistant_content["prefix"] = self.prefix
                 if self.reasoning_content:
-                    content["reasoning_content"] = self.reasoning_content
+                    assistant_content["reasoning_content"] = self.reasoning_content
                 if self.funcResponse:
-                    content["tool_calls"] = self.funcResponse.as_content
+                    assistant_content["tool_calls"] = self.funcResponse.as_content
                 context_list += [assistant_content]
         if self.funcResponse:
             if self.new_content_role == "tool":

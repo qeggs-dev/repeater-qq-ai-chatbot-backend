@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>复读机Repeater - 用户配置管理</title>
+    <link rel="icon" href="/favicon.ico">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --primary-light: #5dade2;
+            --primary-lighter: #aed6f1;
+            --primary-lightest: #ebf5fb;
+            --text-color: #2c3e50;
+            --border-color: #bdc3c7;
+            --success-color: #2ecc71;
+            --danger-color: #e74c3c;
+            --warning-color: #f39c12;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            align-items: center;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-icon img {
+            width: 30px;
+            height: 30px;
+        }
+        
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .subtitle {
+            font-size: 16px;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 25px;
+        }
+        
+        .panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: var(--card-shadow);
+            padding: 20px;
+            height: calc(100vh - 180px);
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .user-list {
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        
+        .user-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-item:hover {
+            background-color: var(--primary-lightest);
+        }
+        
+        .user-item.active {
+            background-color: var(--primary-lighter);
+            font-weight: 600;
+        }
+        
+        .user-id {
+            font-weight: 500;
+        }
+        
+        .delete-user-btn {
+            background: none;
+            border: none;
+            color: var(--danger-color);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .delete-user-btn:hover {
+            background-color: rgba(231, 76, 60, 0.1);
+        }
+        
+        .json-tree {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding-right: 10px;
+        }
+        
+        .tree-node {
+            padding: 6px 0;
+            position: relative;
+        }
+        
+        .node-content {
+            display: flex;
+            align-items: center;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .node-content:hover {
+            background-color: var(--primary-lightest);
+        }
+        
+        .node-content.selected {
+            background-color: var(--primary-lighter);
+        }
+        
+        .toggle {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .key {
+            font-weight: 600;
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        
+        .value {
+            color: var(--text-color);
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+        }
+        
+        .type-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+            background-color: var(--primary-lightest);
+            color: var(--primary-color);
+        }
+        
+        .context-menu {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            z-index: 100;
+            min-width: 180px;
+            overflow: hidden;
+        }
+        
+        .menu-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .menu-item:hover {
+            background-color: var(--primary-lightest);
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        
+        .modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 450px;
+            max-width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+        
+        .modal.active .modal-content {
+            transform: translateY(0);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-light));
+            color: white;
+            border-radius: 12px 12px 0 0;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .modal-body {
+            padding: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+        
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+        }
+        
+        .btn-outline:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            height: 100%;
+            color: #7f8c8d;
+            padding: 30px;
+        }
+        
+        .empty-state-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+            color: var(--primary-lighter);
+        }
+        
+        .empty-state-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 20px;
+            background-color: white;
+            border-top: 1px solid var(--border-color);
+            border-radius: 0 0 10px 10px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            transform: translateX(120%);
+            transition: transform 0.3s ease-in-out;
+            z-index: 2000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.success {
+            background-color: var(--success-color);
+        }
+        
+        .notification.error {
+            background-color: var(--danger-color);
+        }
+        
+        .notification.info {
+            background-color: var(--primary-color);
+        }
+        
+        .spinner {
+            border: 3px solid var(--primary-lighter);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media (max-width: 900px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+            
+            .panel {
+                height: auto;
+                max-height: 400px;
+            }
+            
+            .panel:last-child {
+                max-height: none;
+                height: calc(100vh - 500px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <img src="https://cdn.jsdelivr.net/gh/twitter/twemoji/assets/svg/1f4e1.svg" alt="Repeater Icon">
+                </div>
+                <div>
+                    <div class="logo-text">复读机Repeater</div>
+                    <div class="subtitle">用户配置数据管理器</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">用户列表</div>
+                    <button class="btn btn-outline" id="refreshUserListBtn">
+                        刷新
+                    </button>
+                </div>
+                <div class="user-list" id="userList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">👤</div>
+                        <div class="empty-state-title">正在加载用户列表...</div>
+                        <p>请稍候</p>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div>总用户数: <span id="userCount">0</span></div>
+                    <div>最后更新: <span id="lastUpdated">--:--:--</span></div>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-title">配置数据</div>
+                    <div class="action-buttons">
+                        <button class="btn btn-outline" id="refreshBtn">
+                            刷新数据
+                        </button>
+                        <button class="btn btn-primary" id="addNodeBtn" disabled>
+                            添加节点
+                        </button>
+                        <button class="btn btn-danger" id="deleteConfigBtn" disabled>
+                            删除配置
+                        </button>
+                    </div>
+                </div>
+                <div class="json-tree" id="jsonTree">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📁</div>
+                        <div class="empty-state-title">选择用户查看配置</div>
+                        <p>从左侧用户列表中选择一个用户来查看和编辑配置数据</p>
+                    </div>
+                </div>
+                <div class="status-bar">
+                    <div>用户ID: <span id="currentUserId">未选择</span></div>
+                    <div>数据项: <span id="dataItemCount">0</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 右键菜单 -->
+    <div class="context-menu" id="contextMenu" style="display: none;">
+        <div class="menu-item" id="editNodeBtn">
+            编辑节点
+        </div>
+        <div class="menu-item" id="deleteNodeBtn">
+            删除节点
+        </div>
+    </div>
+    
+    <!-- 编辑节点模态框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">编辑配置项</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="nodeKey">键 (Key)</label>
+                    <input type="text" id="nodeKey" class="form-control" placeholder="输入键名">
+                </div>
+                <div class="form-group">
+                    <label for="nodeType">值类型</label>
+                    <select id="nodeType" class="form-control">
+                        <option value="string">字符串 (string)</option>
+                        <option value="int">整数 (int)</option>
+                        <option value="float">浮点数 (float)</option>
+                        <option value="bool">布尔值 (bool)</option>
+                        <option value="null">空值 (null)</option>
+                        <option value="dict">字典 (dict)</option>
+                        <option value="list">列表 (list)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="valueContainer">
+                    <label for="nodeValue">值 (Value)</label>
+                    <input type="text" id="nodeValue" class="form-control" placeholder="输入值">
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-outline" id="cancelEditBtn">取消</button>
+                    <button class="btn btn-primary" id="saveEditBtn">保存更改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="notification" id="notification"></div>
+    
+    <script>
+        // 全局状态
+        const state = {
+            currentUserId: null,
+            selectedNode: null,
+            contextMenuPosition: { x: 0, y: 0 },
+            editingPath: null,
+            editingIsNew: false
+        };
+        
+        // DOM元素
+        const userListEl = document.getElementById('userList');
+        const jsonTreeEl = document.getElementById('jsonTree');
+        const contextMenu = document.getElementById('contextMenu');
+        const editModal = document.getElementById('editModal');
+        const currentUserIdEl = document.getElementById('currentUserId');
+        const userCountEl = document.getElementById('userCount');
+        const dataItemCountEl = document.getElementById('dataItemCount');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const refreshUserListBtn = document.getElementById('refreshUserListBtn');
+        const deleteConfigBtn = document.getElementById('deleteConfigBtn');
+        const addNodeBtn = document.getElementById('addNodeBtn');
+        const notificationEl = document.getElementById('notification');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载用户列表
+            loadUserList();
+            updateLastUpdated();
+            
+            // 绑定事件
+            document.addEventListener('click', () => {
+                contextMenu.style.display = 'none';
+            });
+            
+            refreshBtn.addEventListener('click', () => {
+                if (state.currentUserId) {
+                    loadUserConfig(state.currentUserId);
+                }
+            });
+            
+            refreshUserListBtn.addEventListener('click', () => {
+                loadUserList();
+            });
+            
+            deleteConfigBtn.addEventListener('click', () => {
+                if (state.currentUserId) {
+                    if (confirm(`确定要删除用户 ${state.currentUserId} 的所有配置数据吗？此操作不可撤销！`)) {
+                        deleteUserConfig(state.currentUserId);
+                    }
+                }
+            });
+            
+            addNodeBtn.addEventListener('click', () => {
+                openEditModal('', '', 'string', true);
+            });
+            
+            // 绑定模态框按钮
+            document.getElementById('cancelEditBtn').addEventListener('click', () => {
+                editModal.classList.remove('active');
+            });
+            
+            document.getElementById('saveEditBtn').addEventListener('click', () => {
+                saveConfigChange();
+            });
+            
+            // 监听值类型变化
+            document.getElementById('nodeType').addEventListener('change', (e) => {
+                updateValueInputByType(e.target.value);
+            });
+        });
+        
+        // API调用函数
+        async function fetchUserList() {
+            try {
+                const response = await fetch(`/userdata/config/userlist`);
+                if (!response.ok) {
+                    throw new Error('获取用户列表失败');
+                }
+                return await response.json();
+            } catch (error) {
+                showNotification(`错误: ${error.message}`, 'error');
+                console.error('获取用户列表失败:', error);
+                return [];
+            }
+        }
+        
+        async function fetchUserConfig(userId) {
+            try {
+                const response = await fetch(`/userdata/config/get/${userId}`);
+                if (!response.ok) {
+                    throw new Error('获取用户配置失败');
+                }
+                return await response.json();
+            } catch (error) {
+                showNotification(`错误: ${error.message}`, 'error');
+                console.error('获取用户配置失败:', error);
+                return null;
+            }
+        }
+        
+        async function updateConfig(userId, valueType, key, value) {
+            try {
+                const formData = new FormData();
+                formData.append('key', key);
+                formData.append('value', value);
+                
+                const response = await fetch(`/userdata/config/set/${userId}/${valueType}`, {
+                    method: 'PUT',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('更新配置失败');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                showNotification(`错误: ${error.message}`, 'error');
+                console.error('更新配置失败:', error);
+                return null;
+            }
+        }
+        
+        async function deleteKey(userId, key) {
+            try {
+                const formData = new FormData();
+                formData.append('key', key);
+                
+                const response = await fetch(`/userdata/config/delkey/${userId}`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('删除配置项失败');
+                }
+                
+                return await response.json();
+            } catch (error) {
+                showNotification(`错误: ${error.message}`, 'error');
+                console.error('删除配置项失败:', error);
+                return null;
+            }
+        }
+        
+        async function deleteUserConfig(userId) {
+            try {
+                const response = await fetch(`/userdata/config/delete/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    throw new Error('删除用户配置失败');
+                }
+                
+                return true;
+            } catch (error) {
+                showNotification(`错误: ${error.message}`, 'error');
+                console.error('删除用户配置失败:', error);
+                return false;
+            }
+        }
+        
+        // 用户界面函数
+        async function loadUserList() {
+            userListEl.innerHTML = '<div class="empty-state"><div class="spinner"></div><div>正在加载用户列表...</div></div>';
+            
+            try {
+                const users = await fetchUserList();
+                renderUserList(users);
+                updateLastUpdated();
+            } catch (error) {
+                userListEl.innerHTML = createEmptyState('❌', '加载失败', '无法获取用户列表，请检查网络连接');
+            }
+        }
+        
+        async function loadUserConfig(userId) {
+            jsonTreeEl.innerHTML = '<div class="empty-state"><div class="spinner"></div><div>正在加载用户配置...</div></div>';
+            
+            try {
+                const config = await fetchUserConfig(userId);
+                if (config) {
+                    renderJsonTree(config);
+                    dataItemCountEl.textContent = Object.keys(config).length;
+                    addNodeBtn.disabled = false;
+                } else {
+                    jsonTreeEl.innerHTML = createEmptyState('📭', '没有配置数据', '该用户尚未创建任何配置');
+                    dataItemCountEl.textContent = '0';
+                    addNodeBtn.disabled = false;
+                }
+            } catch (error) {
+                jsonTreeEl.innerHTML = createEmptyState('❌', '加载失败', '无法获取用户配置，请稍后重试');
+            }
+        }
+        
+        function renderUserList(users) {
+            if (!users || users.length === 0) {
+                userListEl.innerHTML = createEmptyState('👥', '没有用户数据', '尚未创建任何用户配置');
+                userCountEl.textContent = '0';
+                return;
+            }
+            
+            userListEl.innerHTML = '';
+            users.forEach(user => {
+                const userEl = document.createElement('div');
+                userEl.className = 'user-item';
+                userEl.dataset.id = user;
+                
+                userEl.innerHTML = `
+                    <div class="user-id">${user}</div>
+                    <button class="delete-user-btn" title="删除用户配置">
+                        🗑️
+                    </button>
+                `;
+                
+                userEl.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('delete-user-btn')) {
+                        // 选择用户
+                        document.querySelectorAll('.user-item').forEach(el => {
+                            el.classList.remove('active');
+                        });
+                        userEl.classList.add('active');
+                        state.currentUserId = user;
+                        currentUserIdEl.textContent = user;
+                        deleteConfigBtn.disabled = false;
+                        addNodeBtn.disabled = false;
+                        loadUserConfig(user);
+                    }
+                });
+                
+                // 删除用户配置按钮
+                const deleteBtn = userEl.querySelector('.delete-user-btn');
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`确定要删除用户 ${user} 的所有配置数据吗？`)) {
+                        const success = await deleteUserConfig(user);
+                        if (success) {
+                            showNotification(`用户 ${user} 的配置数据已删除`, 'success');
+                            
+                            // 如果是当前选中的用户，清除显示
+                            if (state.currentUserId === user) {
+                                state.currentUserId = null;
+                                currentUserIdEl.textContent = '未选择';
+                                jsonTreeEl.innerHTML = createEmptyState('📁', '用户配置已删除', '请选择其他用户查看配置数据');
+                                deleteConfigBtn.disabled = true;
+                                addNodeBtn.disabled = true;
+                            }
+                            
+                            // 从列表中移除
+                            userEl.remove();
+                            userCountEl.textContent = document.querySelectorAll('.user-item').length;
+                        }
+                    }
+                });
+                
+                userListEl.appendChild(userEl);
+            });
+            
+            userCountEl.textContent = users.length;
+        }
+        
+        function renderJsonTree(data) {
+            jsonTreeEl.innerHTML = '';
+            const rootNode = document.createElement('div');
+            rootNode.className = 'tree-node';
+            
+            const renderNode = (nodeData, parentElement, path = '') => {
+                for (const key in nodeData) {
+                    const value = nodeData[key];
+                    const nodePath = path ? `${path}.${key}` : key;
+                    const nodeEl = document.createElement('div');
+                    nodeEl.className = 'tree-node';
+                    
+                    const valueType = getValueType(value);
+                    const isObject = valueType === 'dict' || valueType === 'list';
+                    
+                    nodeEl.innerHTML = `
+                        <div class="node-content" data-path="${nodePath}">
+                            ${isObject ? '<div class="toggle">▶</div>' : '<div class="toggle" style="visibility: hidden;"></div>'}
+                            <span class="key">${key}:</span>
+                            ${!isObject ? `<span class="value">${formatValue(value)}</span>` : ''}
+                            <span class="type-tag">${valueType}</span>
+                        </div>
+                    `;
+                    
+                    const contentEl = nodeEl.querySelector('.node-content');
+                    
+                    // 右键菜单
+                    contentEl.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        state.selectedNode = { key, value, path: nodePath, type: valueType };
+                        
+                        state.contextMenuPosition = { x: e.pageX, y: e.pageY };
+                        contextMenu.style.display = 'block';
+                        contextMenu.style.left = `${state.contextMenuPosition.x}px`;
+                        contextMenu.style.top = `${state.contextMenuPosition.y}px`;
+                        
+                        // 绑定编辑和删除操作
+                        document.getElementById('editNodeBtn').onclick = () => {
+                            openEditModal(key, value, valueType);
+                            contextMenu.style.display = 'none';
+                        };
+                        
+                        document.getElementById('deleteNodeBtn').onclick = async () => {
+                            if (confirm(`确定要删除 ${nodePath} 吗？`)) {
+                                const success = await deleteKey(state.currentUserId, nodePath);
+                                if (success) {
+                                    showNotification(`配置项 ${nodePath} 已删除`, 'success');
+                                    loadUserConfig(state.currentUserId);
+                                }
+                            }
+                            contextMenu.style.display = 'none';
+                        };
+                    });
+                    
+                    // 点击事件（展开/折叠）
+                    if (isObject) {
+                        const toggleEl = nodeEl.querySelector('.toggle');
+                        let childrenContainer = null;
+                        
+                        toggleEl.addEventListener('click', () => {
+                            if (childrenContainer) {
+                                childrenContainer.remove();
+                                childrenContainer = null;
+                                toggleEl.textContent = '▶';
+                            } else {
+                                childrenContainer = document.createElement('div');
+                                childrenContainer.className = 'children-container';
+                                childrenContainer.style.paddingLeft = '20px';
+                                childrenContainer.style.marginTop = '5px';
+                                
+                                renderNode(value, childrenContainer, nodePath);
+                                nodeEl.appendChild(childrenContainer);
+                                toggleEl.textContent = '▼';
+                            }
+                        });
+                    }
+                    
+                    parentElement.appendChild(nodeEl);
+                }
+            };
+            
+            renderNode(data, rootNode);
+            jsonTreeEl.appendChild(rootNode);
+        }
+        
+        function openEditModal(key, value, type, isNew = false) {
+            state.editingIsNew = isNew;
+            state.editingPath = key;
+            
+            document.getElementById('modalTitle').textContent = isNew ? '添加配置项' : '编辑配置项';
+            document.getElementById('nodeKey').value = key;
+            document.getElementById('nodeKey').disabled = !isNew;
+            document.getElementById('nodeType').value = type;
+            
+            updateValueInputByType(type, value);
+            
+            editModal.classList.add('active');
+        }
+        
+        function updateValueInputByType(type, value = '') {
+            const valueContainer = document.getElementById('valueContainer');
+            
+            if (type === 'bool') {
+                valueContainer.innerHTML = `
+                    <label for="nodeValue">值 (Value)</label>
+                    <select id="nodeValue" class="form-control">
+                        <option value="true" ${value === true ? 'selected' : ''}>true</option>
+                        <option value="false" ${value === false ? 'selected' : ''}>false</option>
+                    </select>
+                `;
+            } else if (type === 'null') {
+                valueContainer.innerHTML = `
+                    <label for="nodeValue">值 (Value)</label>
+                    <input type="text" id="nodeValue" class="form-control" value="null" readonly>
+                `;
+            } else if (type === 'dict' || type === 'list') {
+                valueContainer.innerHTML = `
+                    <label for="nodeValue">值 (Value)</label>
+                    <textarea id="nodeValue" class="form-control" rows="4" placeholder="输入${type === 'dict' ? 'JSON对象' : 'JSON数组'}，例如: ${type === 'dict' ? '{"key": "value"}' : '["item1", "item2"]'}">${formatComplexValue(value)}</textarea>
+                `;
+            } else {
+                valueContainer.innerHTML = `
+                    <label for="nodeValue">值 (Value)</label>
+                    <input type="text" id="nodeValue" class="form-control" value="${formatValueForInput(value, type)}">
+                `;
+            }
+        }
+        
+        async function saveConfigChange() {
+            const key = document.getElementById('nodeKey').value;
+            const type = document.getElementById('nodeType').value;
+            const valueInput = document.getElementById('nodeValue');
+            let value = valueInput.value;
+            
+            if (!key) {
+                showNotification('键名不能为空', 'error');
+                return;
+            }
+            
+            // 处理复杂类型
+            if (type === 'dict' || type === 'list') {
+                try {
+                    value = JSON.parse(value);
+                } catch (e) {
+                    showNotification('JSON格式错误: ' + e.message, 'error');
+                    return;
+                }
+            }
+            
+            // 处理其他类型转换
+            if (type === 'int') {
+                value = parseInt(value);
+                if (isNaN(value)) {
+                    showNotification('请输入有效的整数', 'error');
+                    return;
+                }
+            } else if (type === 'float') {
+                value = parseFloat(value);
+                if (isNaN(value)) {
+                    showNotification('请输入有效的浮点数', 'error');
+                    return;
+                }
+            } else if (type === 'bool') {
+                value = value === 'true';
+            } else if (type === 'null') {
+                value = null;
+            }
+            
+            // 发送API请求
+            const success = await updateConfig(
+                state.currentUserId, 
+                type, 
+                state.editingIsNew ? key : state.editingPath, 
+                state.editingIsNew ? value : JSON.stringify(value)
+            );
+            
+            if (success) {
+                showNotification('配置已更新', 'success');
+                editModal.classList.remove('active');
+                loadUserConfig(state.currentUserId);
+            }
+        }
+        
+        // 辅助函数
+        function getValueType(value) {
+            if (value === null) return 'null';
+            if (Array.isArray(value)) return 'list';
+            if (typeof value === 'object') return 'dict';
+            if (typeof value === 'string') return 'string';
+            if (typeof value === 'number') return Number.isInteger(value) ? 'int' : 'float';
+            if (typeof value === 'boolean') return 'bool';
+            return 'unknown';
+        }
+        
+        function formatValue(value) {
+            if (value === null) return 'null';
+            if (typeof value === 'string') return `"${value}"`;
+            if (typeof value === 'boolean') return value ? 'true' : 'false';
+            return value;
+        }
+        
+        function formatComplexValue(value) {
+            if (value === null) return 'null';
+            if (typeof value === 'object') return JSON.stringify(value, null, 2);
+            return value;
+        }
+        
+        function formatValueForInput(value, type) {
+            if (type === 'null') return 'null';
+            if (type === 'string') return value;
+            if (type === 'bool') return value;
+            return value.toString();
+        }
+        
+        function createEmptyState(icon, title, message) {
+            return `
+                <div class="empty-state">
+                    <div class="empty-state-icon">${icon}</div>
+                    <div class="empty-state-title">${title}</div>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+        
+        function updateLastUpdated() {
+            const now = new Date();
+            const timeString = now.toTimeString().split(' ')[0];
+            document.getElementById('lastUpdated').textContent = timeString;
+        }
+        
+        function showNotification(message, type = 'info') {
+            notificationEl.textContent = message;
+            notificationEl.className = `notification ${type}`;
+            notificationEl.classList.add('show');
+            
+            setTimeout(() => {
+                notificationEl.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

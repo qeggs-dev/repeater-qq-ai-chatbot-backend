@@ -26,6 +26,7 @@ from ..Context import (
     FunctionResponse,
     ContextObject
 )
+from ..CallLog import CallLog
 from TimeParser import (
     format_deltatime,
     format_deltatime_ns
@@ -46,6 +47,16 @@ def remove_keys_from_dicts(dict_list: list[dict], keys_to_remove: list[str] | se
         {k: v for k, v in d.items() if k not in keys_to_remove}
         for d in dict_list
     ]
+
+def sum_string_lengths(items, field_name):
+    """
+    计算列表中所有字典指定字段的字符串长度总和
+    
+    :param items: 字典列表
+    :param field_name: 要计算长度的字段名
+    :return: 字符串长度总和
+    """
+    return sum(len(item[field_name]) for item in items if field_name in item and isinstance(item[field_name], str))
 
 class Client:
     def __init__(self, max_concurrency: int | None = None):
@@ -81,10 +92,17 @@ class Client:
         """提交请求到协程池，并等待返回结果"""
         return await self._submit(self._call_api(user_id, request), user_id=user_id)
     
+    # region API
     async def _call_api(self, user_id:str, request: Request) -> Response:
         """调用API"""
+        model_response = Response()
+        model_response.calling_log = CallLog()
         logger.info(f"Created OpenAI Client", user_id = user_id)
         client = AsyncOpenAI(base_url=request.url, api_key=request.key)
+        model_response.calling_log.url = request.url
+        model_response.calling_log.user_id = user_id
+        model_response.calling_log.user_name = request.user_name
+        model_response.calling_log.model = request.model
 
         if not request.context:
             raise ValueError("context is required")
@@ -107,12 +125,12 @@ class Client:
         model_response_context.context_list = request.context.context
         chunk_count:int = 0
         empty_chunk_count:int = 0
-        model_response = Response()
         logger.info(f"Start Streaming", user_id = user_id)
-        print("\n\n", end="", flush=True)
+        print("\n", end="", flush=True)
         stream_processing_start_time:int = time.time_ns()
         last_chunk_time:int = 0
         chunk_times:list[int] = []
+        chunk_nozero_times:list[int] = []
         async for chunk in response:
             delta_data = await self._process_chunk(chunk)
 
@@ -123,7 +141,10 @@ class Client:
                 last_chunk_time = delta_data.created * (10**9)
             else:
                 this_chunk_time = time.time_ns()
-                chunk_times.append(this_chunk_time - last_chunk_time)
+                time_difference = this_chunk_time - last_chunk_time
+                chunk_times.append(time_difference)
+                if time_difference != 0:
+                    chunk_nozero_times.append(time_difference)
                 last_chunk_time = this_chunk_time
             
             if not model_response.id:
@@ -170,17 +191,26 @@ class Client:
         # 打印统计日志
         logger.info("============= API INFO =============", user_id = user_id)
         logger.info(f"API_URL: {request.url}", user_id = user_id)
-        logger.info(f"MODEL: {model_response.model}", user_id = user_id)
+        logger.info(f"Model: {model_response.model}", user_id = user_id)
+        logger.info(f"UserName: {request.user_name}", user_id = user_id)
+        logger.info(f"Chat Completion ID: {model_response.id}", user_id = user_id)
+        model_response.calling_log.id = model_response.id
         logger.info("============ Chunk Count ===========", user_id = user_id)
         logger.info(f"Total Chunk: {chunk_count}", user_id = user_id)
+        model_response.calling_log.total_chunk = chunk_count
         if empty_chunk_count > 0:
             logger.info(f"Empty Chunk: {empty_chunk_count}", user_id = user_id)
             logger.info(f"Non-Empty Chunk: {chunk_count - empty_chunk_count}", user_id = user_id)
+            model_response.calling_log.empty_chunk = empty_chunk_count
         logger.info(f"Chunk effective ratio: {1 - empty_chunk_count / chunk_count :.2%}", user_id = user_id)
         logger.info("========== Time Statistics =========", user_id = user_id)
-        logger.info(f"Total Time: {format_deltatime_ns(stream_processing_end_time - request_start_time, '%H:%M:%S.%n')}", user_id = user_id)
-        logger.info(f"API Request Time: {format_deltatime_ns(request_end_time - request_start_time, '%H:%M:%S.%n')}", user_id = user_id)
-        logger.info(f"Stream Processing Time: {format_deltatime_ns(stream_processing_end_time - stream_processing_start_time, '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"Total Time: {format_deltatime_ns(stream_processing_end_time - request_start_time, '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        model_response.calling_log.request_start_time = request_start_time
+        model_response.calling_log.request_end_time = request_end_time
+        logger.info(f"API Request Time: {format_deltatime_ns(request_end_time - request_start_time, '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        logger.info(f"Stream Processing Time: {format_deltatime_ns(stream_processing_end_time - stream_processing_start_time, '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        model_response.calling_log.stream_processing_start_time = stream_processing_start_time
+        model_response.calling_log.stream_processing_end_time = stream_processing_end_time
 
         created_utc_dt = datetime.fromtimestamp(model_response.created, tz=timezone.utc)
         created_utc_str = created_utc_dt.strftime('%Y-%m-%d %H:%M:%S UTC')
@@ -190,28 +220,36 @@ class Client:
         created_local_str = created_local_dt.strftime("%Y-%m-%d %H:%M:%S")
         logger.info(f"Created Time: {created_local_str}", user_id = user_id)
 
-        logger.info(f"Chunk Average Spawn Time: {format_deltatime_ns(sum(chunk_times) // len(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
-        logger.info(f"Chunk Max Spawn Time: {format_deltatime_ns(max(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
-        logger.info(f"Chunk Min Spawn Time: {format_deltatime_ns(min(chunk_times), '%H:%M:%S.%n')}", user_id = user_id)
+        logger.info(f"Chunk Average Spawn Time: {format_deltatime_ns(sum(chunk_nozero_times) // len(chunk_nozero_times), '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        logger.info(f"Chunk Max Spawn Time: {format_deltatime_ns(max(chunk_nozero_times), '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        logger.info(f"Chunk Min Spawn Time: {format_deltatime_ns(min(chunk_nozero_times), '%H:%M:%S.%f.%u.%n')}", user_id = user_id)
+        model_response.calling_log.chunk_times = chunk_times
 
         logger.info("=========== Token Count ============", user_id = user_id)
         logger.info(f"Total Tokens: {model_response.token_usage.total_tokens}", user_id = user_id)
+        model_response.calling_log.total_tokens = model_response.token_usage.total_tokens
         logger.info(f"Prompt Tokens: {model_response.token_usage.prompt_tokens}", user_id = user_id)
+        model_response.calling_log.prompt_tokens = model_response.token_usage.prompt_tokens
         logger.info(f"Completion Tokens: {model_response.token_usage.completion_tokens}", user_id = user_id)
+        model_response.calling_log.completion_tokens = model_response.token_usage.completion_tokens
         logger.info(f"Cache Hit Count: {model_response.token_usage.prompt_cache_hit_tokens}", user_id = user_id)
+        model_response.calling_log.cache_hit_count = model_response.token_usage.prompt_cache_hit_tokens
         logger.info(f"Cache Miss Count: {model_response.token_usage.prompt_cache_miss_tokens}", user_id = user_id)
+        model_response.calling_log.cache_miss_count = model_response.token_usage.prompt_cache_miss_tokens
         logger.info(f"Cache Hit Ratio: {model_response.token_usage.prompt_cache_hit_tokens / model_response.token_usage.prompt_tokens :.2%}", user_id = user_id)
         logger.info(f"Average Generation Rate: {model_response.token_usage.completion_tokens / ((stream_processing_end_time - stream_processing_start_time) / 1e9):.2f} /s", user_id = user_id)
 
         logger.info("========== Content Length ==========", user_id = user_id)
         logger.info(f"Total Content Length: {len(model_response.context.reasoning_content) + len(model_response.context.new_content)}", user_id = user_id)
+        model_response.calling_log.total_context_length = sum_string_lengths(model_response.context.full_context, "content")
         logger.info(f"Reasoning Content Length: {len(model_response.context.reasoning_content)}", user_id = user_id)
+        model_response.calling_log.reasoning_content_length = len(model_response.context.reasoning_content)
         logger.info(f"New Content Length: {len(model_response.context.new_content)}", user_id = user_id)
+        model_response.calling_log.new_content_length = len(model_response.context.new_content)
 
         logger.info("====================================", user_id = user_id)
         return model_response
-        
-        
+    # endregion
 
     # region > 处理单个API响应块
     async def _process_chunk(

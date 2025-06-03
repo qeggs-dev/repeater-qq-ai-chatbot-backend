@@ -2,6 +2,7 @@
 import asyncio
 import sys
 import time
+import atexit
 
 # ==== 第三方库 ==== #
 from environs import Env
@@ -28,6 +29,10 @@ from .DataManager import (
 from .ApiInfo import (
     ApiInfo,
     ApiGroup
+)
+from .CallLog import (
+    CallLogManager,
+    CallLog
 )
 from TimeParser import (
     format_timestamp,
@@ -60,6 +65,12 @@ class Core:
         self.apiinfo = ApiInfo()
         self.apiinfo.load(env.path('API_INFO_FILE_PATH'))
         self.session_locks = {}
+        self.calllog = CallLogManager(env.path('CALL_LOG_FILE_PATH'))
+        
+        def _exit():
+            self.calllog.save_call_log()
+
+        atexit.register(_exit)
 
     async def get_session_lock(self, user_id: str) -> asyncio.Lock:
         async with self.lock:
@@ -77,8 +88,9 @@ class Core:
         load_prompt: bool = True,
         print_chunk: bool = True
     ) -> dict[str, str]:
+        task_start_time = time.time_ns()
         lock = await self.get_session_lock(user_id)
-
+        
         async with lock:
             async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
                 fdata = await f.read()
@@ -137,6 +149,7 @@ class Core:
             logger.info(f"Message: \n{request.context.new_content}", user_id = user_id)
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
+            request.user_name = user_name
             request.temperature = config.get("temperature", 1.0)
             request.max_tokens = config.get("max_tokens", 1024)
             request.stop = config.get("stop", None)
@@ -144,9 +157,20 @@ class Core:
             request.presence_penalty = config.get("presence_penalty", 0.0)
             request.print_chunk = print_chunk
 
+            call_prepare_end_time = time.time_ns()
+
             response = await self.api_client.submit_Request(user_id=user_id, request=request)
 
+            response.calling_log.task_start_time = task_start_time
+            response.calling_log.call_prepare_start_time = task_start_time
+            response.calling_log.call_prepare_end_time = call_prepare_end_time
+            response.calling_log.created_time = response.created
+
             await context_loader.save(user_id=user_id, context=response.context)
+
+            response.calling_log.task_end_time = time.time_ns()
+
+            await self.calllog.add_call_log(response.calling_log)
 
             logger.success(f"API call successful", user_id = user_id)
             

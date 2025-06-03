@@ -40,6 +40,10 @@ chat = Core()
 async def root():
     return FileResponse(env.path("WEB_PATH") / "index.html")
 
+@app.get("/web/calllog")
+async def root():
+    return FileResponse(env.path("WEB_PATH") / "calllog.html")
+
 @app.get("/web/admin")
 async def root():
     return FileResponse(env.path("WEB_PATH") / "admin" / "index.html")
@@ -108,7 +112,7 @@ async def chat_endpoint(
     )
     if rendering:
         text = ""
-        if 'rendering_content' in context:
+        if 'reasoning_content' in context and context['reasoning_content']:
             text += ('> ' + context['reasoning_content'].replace('\n', '\n> ')).strip() + '\n\n---\n\n'
         text += context['content']
         fuuid = uuid4()
@@ -317,6 +321,16 @@ async def delete_config(user_id: str):
     await chat.user_config_manager.delete(user_id)
     return PlainTextResponse("Config deleted successfully")
 # endregion
+
+# region get calllog
+@app.get("/calllog")
+async def get_calllog():
+    """
+    Endpoint for getting calllog
+    """
+    calllogs = await chat.calllog.read_call_log()
+    calllog_list = [calllog_object.as_dict for calllog_object in calllogs]
+    return JSONResponse(calllog_list)
 
 # region get files
 @app.get("/file/render/{file_uuid}.png", name = "render_file")

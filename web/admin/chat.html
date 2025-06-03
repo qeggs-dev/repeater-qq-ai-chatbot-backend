@@ -1162,12 +1162,10 @@
                     } else {
                         header.innerHTML = `<i class="fas fa-info-circle"></i> ${item.role} [上下文]`;
                     }
-
-                    
-                    contentDiv.innerHTML = item.content.replace(/\n/g, '<br>');
                     
                     const contentDiv = document.createElement('div');
                     contentDiv.className = 'message-content';
+                    contentDiv.innerHTML = item.content.replace(/\n/g, '<br>');
                     contentDiv.textContent = item.content;
                     
                     messageDiv.appendChild(header);
@@ -1321,23 +1319,26 @@
             function addMessageToChat(sender, content, reasoning = null, imageUrl = null, fileUuid = null) {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${sender}-message`;
-                
+                        
                 const header = document.createElement('div');
                 header.className = 'message-header';
                 header.innerHTML = sender === 'user' 
                     ? '<i class="fas fa-user"></i> ' + (userNameInput.value || '您') 
                     : '<i class="fas fa-robot"></i> 复读机';
-                
-                contentDiv.innerHTML = content.replace(/\n/g, '<br>');
-                contentDiv.textContent = content;
-                
+                        
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                // 关键修改：将换行符转换为HTML换行标签
+                contentDiv.innerHTML = content.replace(/\n/g, '<br>'); 
+                        
                 messageDiv.appendChild(header);
                 messageDiv.appendChild(contentDiv);
-                
+                        
                 if (reasoning) {
                     const reasoningDiv = document.createElement('div');
                     reasoningDiv.className = 'reasoning';
-                    reasoningDiv.textContent = reasoning;
+                    // 同样处理推理内容中的换行符
+                    reasoningDiv.innerHTML = reasoning.replace(/\n/g, '<br>'); 
                     contentDiv.appendChild(reasoningDiv);
                 }
                 
@@ -1363,8 +1364,6 @@
                 }
                 
                 chatHistory.appendChild(messageDiv);
-                
-                // 滚动到底部
                 chatHistory.scrollTop = chatHistory.scrollHeight;
             }
             
@@ -1424,14 +1423,14 @@
             // 编辑消息
             function editMessage() {
                 if (!selectedMessage) return;
-
+                
                 const contentDiv = selectedMessage.querySelector('.message-content');
-                // 获取原始HTML内容并转换<br>回\n
+                // 关键修改：将HTML换行标签转换回换行符
                 const content = contentDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n');
-
+                
                 const reasoningDiv = selectedMessage.querySelector('.reasoning');
                 const reasoning = reasoningDiv ? reasoningDiv.innerHTML.replace(/<br\s*\/?>/gi, '\n') : '';
-
+                
                 editContent.value = content;
                 editReasoning.value = reasoning;
                 editModal.style.display = 'flex';

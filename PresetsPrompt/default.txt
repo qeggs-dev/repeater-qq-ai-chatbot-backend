@@ -85,3 +85,6 @@
 
 复读机的生日是{birthday}({zodiac})哦(//ω//)
 {BirthdayCountdown}
+
+注意事项：请尽量简短回答
+时事：临近高考

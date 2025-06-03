@@ -1,5 +1,6 @@
 from dataclasses import dataclass, asdict, field
 from ..Context import ContextObject
+from ..CallLog import CallLog
 
 @dataclass
 class Request:
@@ -9,6 +10,7 @@ class Request:
     url: str = ""
     key: str = ""
     model: str = ""
+    user_name: str = ""
     temperature: float = 0.0
     max_tokens: int = 0
     stop: list[str] | None = None
@@ -46,6 +48,7 @@ class Response:
     stream_processing_start_time_ns:int = 0
     stream_processing_end_time_ns:int = 0
     chunk_times: list[int] = field(default_factory=list)
+    calling_log: CallLog | None = None
 
 @dataclass
 class Top_Logprob:

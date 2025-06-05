@@ -70,7 +70,7 @@ class CallLogManager:
                 async for line in f:
                     data = await asyncio.to_thread(orjson.loads, line)
                     call_log_list.append(CallLogObject.from_dict(data))
-        
+        logger.info(f"Read {len(call_log_list)} call logs from file", user_id="[System]")
         return call_log_list
     
     def save_call_log(self) -> None:

@@ -3,6 +3,9 @@ import asyncio
 import sys
 import time
 import atexit
+from typing import (
+    Coroutine,
+)
 
 # ==== 第三方库 ==== #
 from environs import Env
@@ -79,6 +82,7 @@ class Core:
             lock = self.session_locks[user_id]
         return lock
 
+    # region > Chat
     async def Chat(
         self,
         message: str,
@@ -86,7 +90,8 @@ class Core:
         user_name: str,
         model_type: str = "",
         load_prompt: bool = True,
-        print_chunk: bool = True
+        print_chunk: bool = True,
+        save_context: bool = True
     ) -> dict[str, str]:
         task_start_time = time.time_ns()
         lock = await self.get_session_lock(user_id)
@@ -150,11 +155,12 @@ class Core:
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.user_name = user_name
-            request.temperature = config.get("temperature", 1.0)
-            request.max_tokens = config.get("max_tokens", 1024)
+            request.temperature = config.get("temperature", env.float("DEFAULT_TEMPERATURE", default=0.8))
+            request.max_tokens = config.get("max_tokens", env.int("DEFAULT_MAX_TOKENS", default=None))
+            request.max_completion_tokens = config.get("max_completion_tokens", env.int("DEFAULT_MAX_COMPLETION_TOKENS", default=None))
             request.stop = config.get("stop", None)
-            request.frequency_penalty = config.get("frequency_penalty", 0.0)
-            request.presence_penalty = config.get("presence_penalty", 0.0)
+            request.frequency_penalty = config.get("frequency_penalty", env.float("DEFAULT_FREQUENCY_PENALTY", default=0.0))
+            request.presence_penalty = config.get("presence_penalty", env.float("DEFAULT_PRESENCE_PENALTY", default=0.0))
             request.print_chunk = print_chunk
 
             call_prepare_end_time = time.time_ns()
@@ -165,8 +171,11 @@ class Core:
             response.calling_log.call_prepare_start_time = task_start_time
             response.calling_log.call_prepare_end_time = call_prepare_end_time
             response.calling_log.created_time = response.created
-
-            await context_loader.save(user_id=user_id, context=response.context)
+            if save_context:
+                await context_loader.save(
+                    user_id=user_id,
+                    context=response.context
+                )
 
             response.calling_log.task_end_time = time.time_ns()
 
@@ -178,4 +187,6 @@ class Core:
                 "reasoning_content": response.context.reasoning_content,
                 "content": response.context.new_content
             }
-            
+    # endregion
+
+    

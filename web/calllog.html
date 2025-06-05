@@ -226,6 +226,7 @@
                     <option value="s">秒</option>
                 </select>
                 <select id="sortOption">
+                    <option value="user">按用户名排序</option>
                     <option value="time">按时间排序</option>
                     <option value="duration">按持续时间排序</option>
                 </select>
@@ -255,7 +256,7 @@
         <div class="dashboard">
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-stopwatch"></i> 请求处理时间分析</h2>
+                    <h2><i class="fas fa-stopwatch"></i> 用户平均请求处理时间</h2>
                     <i class="fas fa-chart-bar"></i>
                 </div>
                 <div class="chart-container">
@@ -265,7 +266,7 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-layer-group"></i> 处理阶段耗时分布</h2>
+                    <h2><i class="fas fa-layer-group"></i> 用户处理阶段耗时分布</h2>
                     <i class="fas fa-chart-pie"></i>
                 </div>
                 <div class="chart-container">
@@ -275,7 +276,7 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-brain"></i> Token使用情况</h2>
+                    <h2><i class="fas fa-brain"></i> 用户Token使用情况</h2>
                     <i class="fas fa-chart-line"></i>
                 </div>
                 <div class="chart-container">
@@ -285,7 +286,7 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-database"></i> 缓存效率分析</h2>
+                    <h2><i class="fas fa-database"></i> 用户缓存效率分析</h2>
                     <i class="fas fa-chart-pie"></i>
                 </div>
                 <div class="chart-container">
@@ -295,7 +296,7 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-file-alt"></i> 上下文内容分析</h2>
+                    <h2><i class="fas fa-file-alt"></i> 用户上下文内容分析</h2>
                     <i class="fas fa-chart-bar"></i>
                 </div>
                 <div class="chart-container">
@@ -305,22 +306,21 @@
             
             <div class="card">
                 <div class="card-header">
-                    <h2><i class="fas fa-list"></i> 请求详情</h2>
+                    <h2><i class="fas fa-list"></i> 用户请求汇总</h2>
                     <i class="fas fa-table"></i>
                 </div>
                 <div class="table-container" style="overflow-x: auto;">
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>模型</th>
-                                <th>用户</th>
-                                <th>总耗时</th>
-                                <th>Tokens</th>
-                                <th>缓存命中</th>
+                                <th>用户名</th>
+                                <th>请求次数</th>
+                                <th>平均耗时</th>
+                                <th>总Tokens</th>
+                                <th>缓存命中率</th>
                             </tr>
                         </thead>
-                        <tbody id="requestTable">
+                        <tbody id="userSummaryTable">
                             <!-- Table rows will be populated by JavaScript -->
                         </tbody>
                     </table>
@@ -329,95 +329,17 @@
         </div>
         
         <div class="footer">
-            <p>数据可视化仪表盘 &copy; 2023 | 数据来源: /calllog API | 最后更新: <span id="lastUpdate"></span></p>
+            <p>数据可视化仪表盘 &copy; 2025 | 数据来源: Repeater Calllog API | 最后更新: <span id="lastUpdate"></span></p>
         </div>
     </div>
 
     <script>
-        // 示例数据（实际应用中应从API获取）
-        const sampleData = [
-            {
-                "id": "req_001",
-                "url": "/api/v1/chat",
-                "model": "gpt-4",
-                "user_id": "user_123",
-                "user_name": "张三",
-                "total_chunk": 12,
-                "empty_chunk": 2,
-                "task_start_time": 1685692800000000000,
-                "task_end_time": 1685692801200000000,
-                "request_start_time": 1685692800000000000,
-                "request_end_time": 1685692800500000000,
-                "stream_processing_start_time": 1685692800500000000,
-                "stream_processing_end_time": 1685692801000000000,
-                "call_prepare_start_time": 1685692801000000000,
-                "call_prepare_end_time": 1685692801200000000,
-                "chunk_times": [50000000, 45000000, 48000000, 52000000],
-                "created_time": 1685692800,
-                "total_tokens": 1450,
-                "prompt_tokens": 780,
-                "completion_tokens": 670,
-                "cache_hit_count": 8,
-                "cache_miss_count": 4,
-                "total_context_length": 2450,
-                "reasoning_content_length": 1200,
-                "new_content_length": 350
-            },
-            {
-                "id": "req_002",
-                "url": "/api/v1/complete",
-                "model": "gpt-3.5",
-                "user_id": "user_456",
-                "user_name": "李四",
-                "total_chunk": 8,
-                "empty_chunk": 1,
-                "task_start_time": 1685692900000000000,
-                "task_end_time": 1685692900800000000,
-                "request_start_time": 1685692900000000000,
-                "request_end_time": 1685692900300000000,
-                "stream_processing_start_time": 1685692900300000000,
-                "stream_processing_end_time": 1685692900700000000,
-                "call_prepare_start_time": 1685692900700000000,
-                "call_prepare_end_time": 1685692900800000000,
-                "chunk_times": [30000000, 28000000, 32000000, 29000000],
-                "created_time": 1685692900,
-                "total_tokens": 890,
-                "prompt_tokens": 420,
-                "completion_tokens": 470,
-                "cache_hit_count": 5,
-                "cache_miss_count": 3,
-                "total_context_length": 1560,
-                "reasoning_content_length": 850,
-                "new_content_length": 280
-            },
-            {
-                "id": "req_003",
-                "url": "/api/v1/translate",
-                "model": "gpt-4",
-                "user_id": "user_789",
-                "user_name": "王五",
-                "total_chunk": 15,
-                "empty_chunk": 0,
-                "task_start_time": 1685693000000000000,
-                "task_end_time": 1685693002000000000,
-                "request_start_time": 1685693000000000000,
-                "request_end_time": 1685693000600000000,
-                "stream_processing_start_time": 1685693000600000000,
-                "stream_processing_end_time": 1685693001800000000,
-                "call_prepare_start_time": 1685693001800000000,
-                "call_prepare_end_time": 1685693002000000000,
-                "chunk_times": [60000000, 58000000, 62000000, 59000000, 61000000],
-                "created_time": 1685693000,
-                "total_tokens": 2100,
-                "prompt_tokens": 1100,
-                "completion_tokens": 1000,
-                "cache_hit_count": 3,
-                "cache_miss_count": 12,
-                "total_context_length": 3200,
-                "reasoning_content_length": 1800,
-                "new_content_length": 520
-            }
-        ];
+        // 在全局作用域初始化图表变量
+        let durationChart = null;
+        let stagesChart = null;
+        let tokensChart = null;
+        let cacheChart = null;
+        let contentChart = null;
 
         // 时间单位转换因子
         const timeFactors = {
@@ -453,43 +375,130 @@
         // 获取数据并渲染仪表盘
         async function fetchDataAndRender() {
             try {
-                // 实际应用中，这里应调用API
-                // const response = await fetch('/calllog');
-                // const data = await response.json();
+                // 显示加载状态
+                document.getElementById('totalRequests').textContent = "加载中...";
+                document.getElementById('avgResponse').textContent = "加载中...";
+                document.getElementById('totalTokens').textContent = "加载中...";
+                document.getElementById('cacheHitRate').textContent = "加载中...";
                 
-                // 使用示例数据
-                const data = sampleData;
+                // 调用API获取真实数据
+                const response = await fetch('/calllog');
+                
+                if (!response.ok) {
+                    throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const data = await response.json();
                 
                 renderDashboard(data);
                 updateLastUpdated();
             } catch (error) {
                 console.error('获取数据失败:', error);
-                alert('无法获取数据，请稍后再试。');
+                
+                // 更新UI显示错误
+                document.getElementById('totalRequests').textContent = "错误";
+                document.getElementById('avgResponse').textContent = "错误";
+                document.getElementById('totalTokens').textContent = "错误";
+                document.getElementById('cacheHitRate').textContent = "错误";
+                
+                // 在表格区域显示错误信息
+                const tableBody = document.getElementById('userSummaryTable');
+                tableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #e74c3c;">${error.message}</td></tr>`;
+                
+                alert(`无法获取数据: ${error.message}`);
             }
+        }
+
+        // 按用户名分组数据
+        function groupDataByUser(data) {
+            const grouped = {};
+            
+            data.forEach(req => {
+                const userName = req.user_name || '未知用户';
+                if (!grouped[userName]) {
+                    grouped[userName] = {
+                        userName: userName,
+                        requestCount: 0,
+                        totalDuration: 0,
+                        totalTokens: 0,
+                        cacheHits: 0,
+                        cacheMisses: 0,
+                        requestTimes: [],
+                        streamTimes: [],
+                        prepareTimes: [],
+                        promptTokens: 0,
+                        completionTokens: 0,
+                        contextLengths: [],
+                        reasoningLengths: [],
+                        newContentLengths: []
+                    };
+                }
+                
+                grouped[userName].requestCount++;
+                const duration = calculateTotalDuration(req);
+                grouped[userName].totalDuration += duration;
+                grouped[userName].totalTokens += req.total_tokens;
+                grouped[userName].cacheHits += req.cache_hit_count;
+                grouped[userName].cacheMisses += req.cache_miss_count;
+                
+                // 记录各阶段时间
+                const stages = calculateStageDurations(req);
+                grouped[userName].requestTimes.push(stages.request);
+                grouped[userName].streamTimes.push(stages.stream);
+                grouped[userName].prepareTimes.push(stages.prepare);
+                
+                // Token 使用
+                grouped[userName].promptTokens += req.prompt_tokens;
+                grouped[userName].completionTokens += req.completion_tokens;
+                
+                // 内容长度
+                grouped[userName].contextLengths.push(req.total_context_length);
+                grouped[userName].reasoningLengths.push(req.reasoning_content_length);
+                grouped[userName].newContentLengths.push(req.new_content_length);
+            });
+            
+            // 转换为数组
+            return Object.values(grouped);
         }
 
         // 渲染仪表盘
         function renderDashboard(data) {
             if (!data || data.length === 0) {
-                alert('没有可用的数据');
+                const tableBody = document.getElementById('userSummaryTable');
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">没有可用的数据</td></tr>';
                 return;
             }
             
             const timeUnit = getTimeUnit();
             const unitSuffix = timeUnit === 's' ? 's' : 'ms';
             
+            // 按用户名分组数据
+            const userData = groupDataByUser(data);
+            
+            // 根据排序选项排序
+            const sortOption = document.getElementById('sortOption').value;
+            if (sortOption === 'user') {
+                userData.sort((a, b) => a.userName.localeCompare(b.userName));
+            } else if (sortOption === 'duration') {
+                userData.sort((a, b) => {
+                    const avgA = a.totalDuration / a.requestCount;
+                    const avgB = b.totalDuration / b.requestCount;
+                    return avgB - avgA;
+                });
+            }
+            
             // 更新统计信息
             updateStats(data, timeUnit, unitSuffix);
             
             // 渲染图表
-            renderDurationChart(data, timeUnit, unitSuffix);
-            renderStagesChart(data, timeUnit);
-            renderTokensChart(data);
-            renderCacheChart(data);
-            renderContentChart(data);
+            renderDurationChart(userData, timeUnit, unitSuffix);
+            renderStagesChart(userData, timeUnit, unitSuffix);
+            renderTokensChart(userData);
+            renderCacheChart(userData);
+            renderContentChart(userData);
             
-            // 渲染请求表格
-            renderRequestTable(data, timeUnit, unitSuffix);
+            // 渲染用户汇总表格
+            renderUserSummaryTable(userData, timeUnit, unitSuffix);
         }
 
         // 更新统计信息
@@ -513,34 +522,34 @@
             // 计算缓存命中率
             const totalCacheHits = data.reduce((sum, req) => sum + req.cache_hit_count, 0);
             const totalCacheMisses = data.reduce((sum, req) => sum + req.cache_miss_count, 0);
-            const cacheHitRate = totalCacheHits + totalCacheMisses > 0 ? 
+            const cacheHitRate = data.length > 0 ? 
                 (totalCacheHits / (totalCacheHits + totalCacheMisses) * 100).toFixed(1) : 0;
             document.getElementById('cacheHitRate').textContent = `${cacheHitRate}%`;
         }
 
-        // 渲染持续时间图表
-        function renderDurationChart(data, timeUnit, unitSuffix) {
+        // 渲染用户平均处理时间图表
+        function renderDurationChart(userData, timeUnit, unitSuffix) {
             const ctx = document.getElementById('durationChart').getContext('2d');
             
-            // 提取请求ID和持续时间
-            const labels = data.map(req => req.id);
-            const durations = data.map(req => {
-                const totalDuration = calculateTotalDuration(req);
-                return convertTime(totalDuration, timeUnit);
+            // 提取用户名和平均处理时间
+            const labels = userData.map(user => user.userName);
+            const avgDurations = userData.map(user => {
+                const avgDuration = user.totalDuration / user.requestCount;
+                return convertTime(avgDuration, timeUnit);
             });
             
-            // 销毁现有图表实例
-            if (window.durationChart) {
-                window.durationChart.destroy();
+            // 安全销毁现有图表实例
+            if (durationChart) {
+                durationChart.destroy();
             }
             
-            window.durationChart = new Chart(ctx, {
+            durationChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [{
-                        label: `总处理时间 (${unitSuffix})`,
-                        data: durations,
+                        label: `平均处理时间 (${unitSuffix})`,
+                        data: avgDurations,
                         backgroundColor: 'rgba(52, 152, 219, 0.7)',
                         borderColor: 'rgba(41, 128, 185, 1)',
                         borderWidth: 1
@@ -574,7 +583,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: '请求ID',
+                                text: '用户名',
                                 color: '#bdc3c7'
                             },
                             ticks: {
@@ -589,49 +598,52 @@
             });
         }
 
-        // 渲染处理阶段图表
-        function renderStagesChart(data, timeUnit) {
+        // 渲染用户各阶段平均耗时图表
+        function renderStagesChart(userData, timeUnit, unitSuffix) {
             const ctx = document.getElementById('stagesChart').getContext('2d');
             
-            // 提取请求ID和各阶段持续时间
-            const labels = data.map(req => req.id);
-            const requestTimes = data.map(req => 
-                convertTime(req.request_end_time - req.request_start_time, timeUnit)
-            );
-            const streamTimes = data.map(req => 
-                convertTime(req.stream_processing_end_time - req.stream_processing_start_time, timeUnit)
-            );
-            const prepareTimes = data.map(req => 
-                convertTime(req.call_prepare_end_time - req.call_prepare_start_time, timeUnit)
-            );
+            // 提取用户名和各阶段平均耗时
+            const labels = userData.map(user => user.userName);
+            const avgRequestTimes = userData.map(user => {
+                const sum = user.requestTimes.reduce((a, b) => a + b, 0);
+                return convertTime(sum / user.requestCount, timeUnit);
+            });
+            const avgStreamTimes = userData.map(user => {
+                const sum = user.streamTimes.reduce((a, b) => a + b, 0);
+                return convertTime(sum / user.requestCount, timeUnit);
+            });
+            const avgPrepareTimes = userData.map(user => {
+                const sum = user.prepareTimes.reduce((a, b) => a + b, 0);
+                return convertTime(sum / user.requestCount, timeUnit);
+            });
             
-            // 销毁现有图表实例
-            if (window.stagesChart) {
-                window.stagesChart.destroy();
+            // 安全销毁现有图表实例
+            if (stagesChart) {
+                stagesChart.destroy();
             }
             
-            window.stagesChart = new Chart(ctx, {
+            stagesChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: '请求处理',
-                            data: requestTimes,
+                            label: '平均请求处理',
+                            data: avgRequestTimes,
                             backgroundColor: 'rgba(46, 204, 113, 0.7)',
                             borderColor: 'rgba(39, 174, 96, 1)',
                             borderWidth: 1
                         },
                         {
-                            label: '流处理',
-                            data: streamTimes,
+                            label: '平均流处理',
+                            data: avgStreamTimes,
                             backgroundColor: 'rgba(155, 89, 182, 0.7)',
                             borderColor: 'rgba(142, 68, 173, 1)',
                             borderWidth: 1
                         },
                         {
-                            label: '准备调用',
-                            data: prepareTimes,
+                            label: '平均准备调用',
+                            data: avgPrepareTimes,
                             backgroundColor: 'rgba(52, 152, 219, 0.7)',
                             borderColor: 'rgba(41, 128, 185, 1)',
                             borderWidth: 1
@@ -650,11 +662,10 @@
                     },
                     scales: {
                         y: {
-                            stacked: true,
                             beginAtZero: true,
                             title: {
                                 display: true,
-                                text: `时间 (${getTimeUnit()})`,
+                                text: `时间 (${unitSuffix})`,
                                 color: '#bdc3c7'
                             },
                             ticks: {
@@ -665,10 +676,9 @@
                             }
                         },
                         x: {
-                            stacked: true,
                             title: {
                                 display: true,
-                                text: '请求ID',
+                                text: '用户名',
                                 color: '#bdc3c7'
                             },
                             ticks: {
@@ -683,42 +693,38 @@
             });
         }
 
-        // 渲染Token使用图表
-        function renderTokensChart(data) {
+        // 渲染用户Token使用情况图表
+        function renderTokensChart(userData) {
             const ctx = document.getElementById('tokensChart').getContext('2d');
             
-            // 提取请求ID和Token使用
-            const labels = data.map(req => req.id);
-            const promptTokens = data.map(req => req.prompt_tokens);
-            const completionTokens = data.map(req => req.completion_tokens);
+            // 提取用户名和Token使用
+            const labels = userData.map(user => user.userName);
+            const promptTokens = userData.map(user => user.promptTokens);
+            const completionTokens = userData.map(user => user.completionTokens);
             
-            // 销毁现有图表实例
-            if (window.tokensChart) {
-                window.tokensChart.destroy();
+            // 安全销毁现有图表实例
+            if (tokensChart) {
+                tokensChart.destroy();
             }
             
-            window.tokensChart = new Chart(ctx, {
-                type: 'line',
+            tokensChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
                             label: '提示Token',
                             data: promptTokens,
-                            borderColor: 'rgba(52, 152, 219, 1)',
-                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            backgroundColor: 'rgba(52, 152, 219, 0.7)',
+                            borderColor: 'rgba(41, 128, 185, 1)',
+                            borderWidth: 1
                         },
                         {
                             label: '完成Token',
                             data: completionTokens,
-                            borderColor: 'rgba(46, 204, 113, 1)',
-                            backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                            borderWidth: 2,
-                            tension: 0.3,
-                            fill: true
+                            backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                            borderColor: 'rgba(39, 174, 96, 1)',
+                            borderWidth: 1
                         }
                     ]
                 },
@@ -750,7 +756,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: '请求ID',
+                                text: '用户名',
                                 color: '#bdc3c7'
                             },
                             ticks: {
@@ -765,33 +771,31 @@
             });
         }
 
-        // 渲染缓存图表
-        function renderCacheChart(data) {
+        // 渲染用户缓存效率图表
+        function renderCacheChart(userData) {
             const ctx = document.getElementById('cacheChart').getContext('2d');
             
-            // 计算总缓存命中和未命中
-            const totalCacheHits = data.reduce((sum, req) => sum + req.cache_hit_count, 0);
-            const totalCacheMisses = data.reduce((sum, req) => sum + req.cache_miss_count, 0);
+            // 计算每个用户的缓存命中率
+            const labels = userData.map(user => user.userName);
+            const cacheHitRates = userData.map(user => {
+                const total = user.cacheHits + user.cacheMisses;
+                return total > 0 ? (user.cacheHits / total * 100) : 0;
+            });
             
-            // 销毁现有图表实例
-            if (window.cacheChart) {
-                window.cacheChart.destroy();
+            // 安全销毁现有图表实例
+            if (cacheChart) {
+                cacheChart.destroy();
             }
             
-            window.cacheChart = new Chart(ctx, {
-                type: 'doughnut',
+            cacheChart = new Chart(ctx, {
+                type: 'bar',
                 data: {
-                    labels: ['缓存命中', '缓存未命中'],
+                    labels: labels,
                     datasets: [{
-                        data: [totalCacheHits, totalCacheMisses],
-                        backgroundColor: [
-                            'rgba(46, 204, 113, 0.7)',
-                            'rgba(231, 76, 60, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(39, 174, 96, 1)',
-                            'rgba(192, 57, 43, 1)'
-                        ],
+                        label: '缓存命中率 (%)',
+                        data: cacheHitRates,
+                        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+                        borderColor: 'rgba(39, 174, 96, 1)',
                         borderWidth: 1
                     }]
                 },
@@ -800,21 +804,38 @@
                     maintainAspectRatio: false,
                     plugins: {
                         legend: {
-                            position: 'right',
                             labels: {
-                                color: '#ecf0f1',
-                                padding: 20
+                                color: '#ecf0f1'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            title: {
+                                display: true,
+                                text: '命中率 (%)',
+                                color: '#bdc3c7'
+                            },
+                            ticks: {
+                                color: '#bdc3c7'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
                             }
                         },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    const label = context.label || '';
-                                    const value = context.raw || 0;
-                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                    const percentage = Math.round((value / total) * 100);
-                                    return `${label}: ${value} (${percentage}%)`;
-                                }
+                        x: {
+                            title: {
+                                display: true,
+                                text: '用户名',
+                                color: '#bdc3c7'
+                            },
+                            ticks: {
+                                color: '#bdc3c7'
+                            },
+                            grid: {
+                                display: false
                             }
                         }
                     }
@@ -822,43 +843,52 @@
             });
         }
 
-        // 渲染内容长度图表
-        function renderContentChart(data) {
+        // 渲染用户上下文内容分析图表
+        function renderContentChart(userData) {
             const ctx = document.getElementById('contentChart').getContext('2d');
             
-            // 提取请求ID和内容长度
-            const labels = data.map(req => req.id);
-            const totalContext = data.map(req => req.total_context_length);
-            const reasoningContent = data.map(req => req.reasoning_content_length);
-            const newContent = data.map(req => req.new_content_length);
+            // 提取用户名和平均内容长度
+            const labels = userData.map(user => user.userName);
+            const avgContextLengths = userData.map(user => {
+                const sum = user.contextLengths.reduce((a, b) => a + b, 0);
+                return sum / user.requestCount;
+            });
+            const avgReasoningLengths = userData.map(user => {
+                const sum = user.reasoningLengths.reduce((a, b) => a + b, 0);
+                return sum / user.requestCount;
+            });
+            const avgNewContentLengths = userData.map(user => {
+                const sum = user.newContentLengths.reduce((a, b) => a + b, 0);
+                return sum / user.requestCount;
+            });
             
-            // 销毁现有图表实例
-            if (window.contentChart) {
-                window.contentChart.destroy();
+            // 安全销毁现有图表实例
+            if (contentChart) {
+                contentChart.destroy();
             }
             
-            window.contentChart = new Chart(ctx, {
+            contentChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            label: '总上下文长度',
-                            data: totalContext,
+                            label: '平均总上下文长度',
+                            data: avgContextLengths,
                             backgroundColor: 'rgba(52, 152, 219, 0.7)',
                             borderColor: 'rgba(41, 128, 185, 1)',
                             borderWidth: 1
                         },
                         {
-                            label: '推理内容长度',
-                            data: reasoningContent,
+                            label: '平均推理内容长度',
+                            data: avgReasoningLengths,
                             backgroundColor: 'rgba(46, 204, 113, 0.7)',
                             borderColor: 'rgba(39, 174, 96, 1)',
                             borderWidth: 1
                         },
                         {
-                            label: '新内容长度',
-                            data: newContent,
+                            label: '平均新内容长度',
+                            data: avgNewContentLengths,
                             backgroundColor: 'rgba(155, 89, 182, 0.7)',
                             borderColor: 'rgba(142, 68, 173, 1)',
                             borderWidth: 1
@@ -893,7 +923,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: '请求ID',
+                                text: '用户名',
                                 color: '#bdc3c7'
                             },
                             ticks: {
@@ -908,23 +938,22 @@
             });
         }
 
-        // 渲染请求表格
-        function renderRequestTable(data, timeUnit, unitSuffix) {
-            const tableBody = document.getElementById('requestTable');
+        // 渲染用户汇总表格
+        function renderUserSummaryTable(userData, timeUnit, unitSuffix) {
+            const tableBody = document.getElementById('userSummaryTable');
             tableBody.innerHTML = '';
             
-            data.forEach(req => {
-                const totalDuration = calculateTotalDuration(req);
-                const convertedDuration = convertTime(totalDuration, timeUnit).toFixed(2);
-                const cacheHitRate = req.cache_hit_count + req.cache_miss_count > 0 ? Math.round((req.cache_hit_count / (req.cache_hit_count + req.cache_miss_count)) * 100) : 0;
+            userData.forEach(user => {
+                const avgDuration = convertTime(user.totalDuration / user.requestCount, timeUnit).toFixed(2);
+                const cacheTotal = user.cacheHits + user.cacheMisses;
+                const cacheHitRate = cacheTotal > 0 ? (user.cacheHits / cacheTotal * 100).toFixed(1) : 0;
                 
                 const row = document.createElement('tr');
                 row.innerHTML = `
-                    <td>${req.id}</td>
-                    <td>${req.model}</td>
-                    <td>${req.user_name}</td>
-                    <td>${convertedDuration} ${unitSuffix}</td>
-                    <td>${req.total_tokens}</td>
+                    <td>${user.userName}</td>
+                    <td>${user.requestCount}</td>
+                    <td>${avgDuration} ${unitSuffix}</td>
+                    <td>${user.totalTokens}</td>
                     <td>${cacheHitRate}%</td>
                 `;
                 tableBody.appendChild(row);

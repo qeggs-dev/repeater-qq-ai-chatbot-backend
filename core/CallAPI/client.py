@@ -114,6 +114,7 @@ class Client:
             frequency_penalty = request.frequency_penalty,
             presence_penalty = request.presence_penalty,
             max_tokens = request.max_tokens,
+            max_completion_tokens=request.max_completion_tokens,
             stop = request.stop,
             stream = True,
             messages = remove_keys_from_dicts(request.context.full_context, {"reasoning_content"}) if not request.context.prefix else request.context.full_context,
@@ -183,6 +184,10 @@ class Client:
             if delta_data.is_empty:
                 empty_chunk_count += 1
             chunk_count += 1
+
+            if request.continue_processing_callback_function is not None:
+                if request.continue_processing_callback_function(model_response_context, delta_data):
+                    break
         stream_processing_end_time = time.time_ns()
         print('\n\n', end="", flush=True)
 
@@ -194,6 +199,11 @@ class Client:
         logger.info(f"Model: {model_response.model}", user_id = user_id)
         logger.info(f"UserName: {request.user_name}", user_id = user_id)
         logger.info(f"Chat Completion ID: {model_response.id}", user_id = user_id)
+        logger.info(f"Temperature: {request.temperature}", user_id = user_id)
+        logger.info(f"Frequency Penalty: {request.frequency_penalty}", user_id = user_id)
+        logger.info(f"Presence Penalty: {request.presence_penalty}", user_id = user_id)
+        logger.info(f"Max Tokens: {request.max_tokens if request.max_tokens else 'MAX'}", user_id = user_id)
+        logger.info(f"Max Completion Tokens: {request.max_completion_tokens if request.max_completion_tokens else 'MAX'}", user_id = user_id)
         model_response.calling_log.id = model_response.id
         logger.info("============ Chunk Count ===========", user_id = user_id)
         logger.info(f"Total Chunk: {chunk_count}", user_id = user_id)

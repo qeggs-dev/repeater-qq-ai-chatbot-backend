@@ -98,6 +98,7 @@ async def chat_endpoint(
     model_type: str = Form("chat"),
     load_prompt: bool = Form(True),
     rendering: bool = Form(False),
+    save_context: bool = Form(True),
 ):
     """
     Endpoint for chat
@@ -108,7 +109,8 @@ async def chat_endpoint(
         user_name = user_name,
         model_type = model_type,
         print_chunk = True,
-        load_prompt = load_prompt
+        load_prompt = load_prompt,
+        save_context = save_context
     )
     if rendering:
         text = ""

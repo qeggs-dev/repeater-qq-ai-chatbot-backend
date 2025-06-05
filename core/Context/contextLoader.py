@@ -95,7 +95,11 @@ class ContextLoader:
         prompt = limit_blank_lines(prompt)
         return prompt
 
-    async def save(self, user_id: str, context: ContextObject) -> None:
+    async def save(
+        self,
+        user_id: str,
+        context: ContextObject,
+    ) -> None:
         context = copy.deepcopy(context)
         context.prompt = ''
         await self.context.save(user_id, context.full_context)

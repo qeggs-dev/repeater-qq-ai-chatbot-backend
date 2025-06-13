@@ -23,8 +23,10 @@ from .object import (
     TokensCount
 )
 from ..Context import (
-    FunctionResponse,
-    ContextObject
+    FunctionResponseUnit,
+    ContextObject,
+    ContentUnit,
+    ContextRole
 )
 from ..CallLog import CallLog
 from TimeParser import (
@@ -117,13 +119,12 @@ class Client:
             max_completion_tokens=request.max_completion_tokens,
             stop = request.stop,
             stream = True,
-            messages = remove_keys_from_dicts(request.context.full_context, {"reasoning_content"}) if not request.context.prefix else request.context.full_context,
+            messages = remove_keys_from_dicts(request.context.full_context, {"reasoning_content"}) if not request.context.last_content.prefix else request.context.full_context,
         )
         request_end_time = time.time_ns()
 
-        model_response_context:ContextObject = ContextObject()
-        model_response_context.new_content_role = "assistant"
-        model_response_context.context_list = request.context.context
+        model_response_content_unit:ContentUnit = ContentUnit()
+        model_response_content_unit.role = ContextRole.ASSISTANT
         chunk_count:int = 0
         empty_chunk_count:int = 0
         logger.info(f"Start Streaming", user_id = user_id)
@@ -159,21 +160,21 @@ class Client:
 
             if delta_data.reasoning_content:
                 if request.print_chunk:
-                    if not model_response_context.reasoning_content:
+                    if not model_response_content_unit.reasoning_content:
                         print('\n\n', end="", flush=True)
                     print(f"\033[7m{delta_data.reasoning_content}\033[0m", end="", flush=True)
-                model_response_context.reasoning_content += delta_data.reasoning_content
+                model_response_content_unit.reasoning_content += delta_data.reasoning_content
             
             if delta_data.content:
                 if request.print_chunk:
-                    if not model_response_context.new_content:
+                    if not model_response_content_unit.content:
                         print('\n\n', end="", flush=True)
                     print(delta_data.content, end="", flush=True)
-                model_response_context.new_content += delta_data.content
+                model_response_content_unit.content += delta_data.content
             
             if delta_data.function_id:
-                model_response_context.funcResponse.callingFunctionResponse.append(
-                    FunctionResponse(
+                model_response_content_unit.funcResponse.callingFunctionResponse.append(
+                    FunctionResponseUnit(
                         id = delta_data.function_id,
                         type = delta_data.function_type,
                         name = delta_data.function_name,
@@ -186,12 +187,13 @@ class Client:
             chunk_count += 1
 
             if request.continue_processing_callback_function is not None:
-                if request.continue_processing_callback_function(model_response_context, delta_data):
+                if request.continue_processing_callback_function(user_id, delta_data):
                     break
         stream_processing_end_time = time.time_ns()
         print('\n\n', end="", flush=True)
 
-        model_response.context = model_response_context
+        model_response.context = request.context
+        model_response.context.context_list.append(model_response_content_unit)
 
         # 打印统计日志
         logger.info("============= API INFO =============", user_id = user_id)
@@ -250,12 +252,12 @@ class Client:
         logger.info(f"Average Generation Rate: {model_response.token_usage.completion_tokens / ((stream_processing_end_time - stream_processing_start_time) / 1e9):.2f} /s", user_id = user_id)
 
         logger.info("========== Content Length ==========", user_id = user_id)
-        logger.info(f"Total Content Length: {len(model_response.context.reasoning_content) + len(model_response.context.new_content)}", user_id = user_id)
+        logger.info(f"Total Content Length: {len(model_response.context.last_content.reasoning_content) + len(model_response.context.last_content.content)}", user_id = user_id)
         model_response.calling_log.total_context_length = sum_string_lengths(model_response.context.full_context, "content")
-        logger.info(f"Reasoning Content Length: {len(model_response.context.reasoning_content)}", user_id = user_id)
-        model_response.calling_log.reasoning_content_length = len(model_response.context.reasoning_content)
-        logger.info(f"New Content Length: {len(model_response.context.new_content)}", user_id = user_id)
-        model_response.calling_log.new_content_length = len(model_response.context.new_content)
+        logger.info(f"Reasoning Content Length: {len(model_response.context.last_content.reasoning_content)}", user_id = user_id)
+        model_response.calling_log.reasoning_content_length = len(model_response.context.last_content.reasoning_content)
+        logger.info(f"New Content Length: {len(model_response.context.last_content.content)}", user_id = user_id)
+        model_response.calling_log.new_content_length = len(model_response.context.last_content.content)
 
         logger.info("====================================", user_id = user_id)
         return model_response
@@ -274,6 +276,7 @@ class Client:
         """
         tokens_usage = TokensCount()
         delta_data = Delta()
+        # 处理元数据
         if hasattr(chunk, "id"):
             delta_data.id = chunk.id
         if hasattr(chunk, "created"):
@@ -281,6 +284,7 @@ class Client:
         if hasattr(chunk, "model"):
             delta_data.model = chunk.model
         
+        # 处理内容
         if hasattr(chunk, "choices") and len(chunk.choices) > 0:
             choice = chunk.choices[0]
             if hasattr(choice, "delta"):
@@ -308,7 +312,7 @@ class Client:
                                 delta_data.function_name = tool.function.name
                             if hasattr(tool.function, "arguments"):
                                 delta_data.function_arguments = tool.function.arguments
-        
+        # 处理logprobs
         if hasattr(choice, "logprobs"):
             if hasattr(choice.logprobs, "content"):
                 logprobs = []
@@ -330,8 +334,8 @@ class Client:
                         logprob.top_logprobs = top_logprobs
                     logprobs.append(logprob)
                 delta_data.logprobs = logprobs
-                        
-        
+
+        # 获取usage数据
         if hasattr(chunk, 'usage') and chunk.usage is not None:
             # 只在最后一个chunk中获取usage数据
             if hasattr(chunk.usage, 'prompt_tokens') and chunk.usage.prompt_tokens is not None:

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, asdict, field
-from typing import Callable
+from typing import Callable, Coroutine
 
 from ..Context import ContextObject
 from ..CallLog import CallLog

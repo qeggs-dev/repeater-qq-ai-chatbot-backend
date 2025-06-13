@@ -77,8 +77,9 @@
 
 ---
 
-## 次级依赖：
-*(默认你已经完成主要依赖的安装，且已经学会了如何使用pip安装依赖)*
+## 次级依赖
+
+*默认你已经完成主要依赖的安装*
 
  - aiofiles
  - environs
@@ -89,9 +90,15 @@
  - markdown
  - imgkit
 
+## pip依赖安装
+
+安装命令：
+> pip install -r requirements.txt
+
 ---
 
-## <span id="render-style">渲染风格</span>
+## 渲染样式
+
 | 风格 | 译名 |
 | :---: | :---: |
 | **`light`** | 亮色 |
@@ -102,79 +109,33 @@
 
 ---
 
-## 命令
+## 人格预设
 
-### > 对话补全
+| 预设 | 描述 |
+| :---: | :---: |
+| `default` | 默认 |
+| `sister` | 姐姐 |
 
-####  - **Chat** -
-> 默认AI自然语言对话补全命令
-> ```plaintext
-> @复读机 /chat <对话内容>
-> ```
-> 此命令也是默认命令，可以直接被`to_me`调起使用
-> ```plaintext
-> @复读机 <对话内容>
-> ```
-> 调用后复读机应该就可以回复你的消息了
-> **注：在群聊中，使用`to_me`会渲染为图片回复，而`/chat`则就强制纯文本回复(仅限200字以内)**
+---
 
-#### - **Reason**
-> 默认AI推理补全命令
-> ```plaintext
-> @复读机 /reason <推理内容>
-> ```
-> 调用后复读机就可以使用推理模型回复你的内容了
-> **注：此命令无论何时，都会渲染为图片回复**
+## 命令表
 
-#### - **Prover**
->  默认AI证明模型补全命令
->  ```plaintext
-> @复读机 /prover <自然语言命题描述>
-> ```
-> 调用后复读机就可以使用推理模型回复你的内容了
-> **注：此命令无论何时，都会渲染为图片回复，且不加载任何提示词**
-> **该模型是专业模型，在日常使用中可能不会有较强表现**
-
-#### - **KeepAnswering**
-> 让AI再次回复内容
->  ```plaintext
-> @复读机 /keep <对话内容>
-> ```
-> **在群聊中，此命令会渲染为图片回复**
-
-#### - **DeleteContext(dc)**
-> 清除当前对话上下文
-> ```plaintext
-> @复读机 /dc
-> ```
-> **注：每个用户仅能清除自己的上下文**
-
-### > 配置设置
-
-#### - **SetRenderStyle(srs)**
-> 设置渲染风格
-> ```plaintext
-> @复读机 /srs <渲染风格>
-> ```
-> **注：[渲染风格](#render-style)仅允许已经被定义的类型，否则会使用默认值**
-
-#### - **SetFrequencyPenalty(sfp)**
-> 设置频率惩罚
-> ```plaintext
-> @复读机 /sfp <频率惩罚>
-> ```
-> **注：频率惩罚仅允许-2~2之间的浮点数，否则会使用默认值0.0**
-
-#### - **SetPresencePenalty(spp)**
-> 设置存在惩罚
-> ```plaintext
-> @复读机 /spp <存在惩罚>
-> ```
-> **注：存在惩罚仅允许-2~2之间的浮点数，否则会使用默认值0.0**
-
-#### - **SetTemperature(st)**
-> 设置温度
-> ```plaintext
-> @复读机 /st <温度>
-> ```
-> **注：温度仅允许0~2之间的浮点数，否则会使用默认值1.0**
+| 命令                       | 别名   | 全名                       | 功能描述                       | 参数描述                                  | 版本      | 命令版本 | 描述 |
+| :---:                      | :---: | :---:                      | :---:                         | :---:                                     | :---:    | :---:   | :---: |
+| `chat`                     | `c`   | `Chat`                     | 与机器人对话                   | 自然语言输入                               | 4.0 Beta | 1.0     | 默认命令，可被to_me消息调起 |
+| `keepAnswering`            | `ka`  | `KeepAnswering`            | 持续对话(常规)                 | 无                                        | 4.0 Beta | 1.0     | 无须输入，AI再次回复 |
+| `keepReasoning`            | `kr`  | `KeepReasoning`            | 持续对话(推理)                 | 无                                        | 4.0 Beta | 1.0     | 无须输入，AI再次使用推理回复 |
+| `renderChat`               | `rc`  | `RenderChat`               | 渲染Markdown回复               | 自然语言输入                               | 4.0 Beta | 1.0     | 强制渲染图片输出 |
+| `setRenderStyle`           | `srs` | `SetRenderStyle`           | 设置渲染样式                   | [渲染样式](#渲染样式)                       | 4.0 Beta | 1.0     | 设置Markdown图片渲染样式 |
+| `npChat`                   | `np`  | `NoPromptChat`             | 不加载提示词进行对话            | 自然语言输入                               | 4.0 Beta | 1.0     | 使用常规模型 |
+| `prover`                   | `p`   | `Prover`                   | 使用Prover模型进行数学形式化证明 | 自然语言输入                               | 4.0 Beta | 1.0     | 使用Prover模型 |
+| `reason`                   | `r`   | `Reason`                   | 使用Reasoner模型进行推理        | 自然语言输入                               | 4.0 Beta | 1.0     | 使用Reasoner模型 |
+| `recomplete`               | `rcm` | `Recomplete`               | 重新进行对话补全                | 无                                        | 4.0 Beta | 1.0     | 重新生成 |
+| `setFrequencyPenalty`      | `sfp` | `SetFrequencyPenalty`      | 设置频率惩罚                   | `-2`\~`2`的浮点数 或`-200%`\~`200%`的百分比 | 4.0 Beta | 1.0     | 控制着模型输出重复相同内容的可能性 |
+| `setPresencePenalty`       | `spp` | `SetPresencePenalty`       | 设置存在惩罚                   | `-2`\~`2`的浮点数 或`-200%`\~`200%`的百分比 | 4.0 Beta | 1.0     | 控制着模型谈论新主题的可能性 |
+| `setTemperature`           | `st`  | `SetTemperature`           | 设置温度                       | `0`\~`2`的浮点数 或`-100%`\~`100%`的百分比 | 4.0 Beta | 1.0     | 控制着模型生成内容的不确定性 |
+| `setPrompt`                | `sp`  | `SetPrompt`                | 设置提示词                     | 自然语言输入                               | 4.0 Beta | 1.0     | 设置提示词 |
+| `changeDefaultPersonality` | `cdp` | `ChangeDefaultPersonality` | 修改默认人格                   | [人格预设](#人格预设)                       | 4.0 Beta | 1.0     | 修改默认人格路由 |
+| `deletePrompt`             | `dp`  | `DeletePrompt`             | 删除提示词                     | 无                                        | 4.0 Beta | 1.0     | 删除提示词 |
+| `deleteContext`            | `dc`  | `DeleteContext`            | 删除上下文                     | 无                                        | 4.0 Beta | 1.0     | 删除上下文 |
+| `varExpand`                | `ve`  | `VarExpand`                | 变量展开                       | 文本模板(使用大括号作为变量标记)            | 4.0 Beta | 1.0     | 变量展开 |

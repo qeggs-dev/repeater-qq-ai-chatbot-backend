@@ -75,7 +75,8 @@ class Core:
         self.calllog = CallLogManager(env.path('CALL_LOG_FILE_PATH'))
         
         def _exit():
-            self.calllog.save_call_log()
+            if env.bool("SAVE_CALL_LOG", True):
+                self.calllog.save_call_log()
 
         atexit.register(_exit)
 
@@ -86,6 +87,8 @@ class Core:
             lock = self.session_locks[user_id]
         return lock
     
+    
+    # region > get prompt_vp
     async def get_prompt_vp(
         self,
         user_id: str,
@@ -115,6 +118,9 @@ class Core:
             randfloat = lambda min, max: random.uniform(float(min), float(max)),
             randchoice = lambda *args: random.choice(args)
         )
+    # endregion
+    
+    # region > load nickname mapping
     async def load_nickname_mapping(self, user_id: str, user_name: str) -> str:
         async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
             fdata = await f.read()
@@ -130,6 +136,7 @@ class Core:
             user_name = nickname_mapping[user_id]
         
         return user_name
+    # endregion
 
     # region > Chat
     async def Chat(
@@ -137,7 +144,8 @@ class Core:
         message: str,
         user_id: str,
         user_name: str,
-        role_name: str = "",
+        role: str = "user",
+        role_name:  str = "",
         model_type: str = "",
         load_prompt: bool = True,
         print_chunk: bool = True,
@@ -149,9 +157,10 @@ class Core:
         lock = await self.get_session_lock(user_id)
         
         async with lock:
+            logger.info("====================================", user_id = user_id)
             logger.info("Start Task", user_id = user_id)
 
-            username = await self.load_nickname_mapping(user_id, user_name)
+            user_name = await self.load_nickname_mapping(user_id, user_name)
 
             config = await self.user_config_manager.load(user_id=user_id)
             if not config or not isinstance(config, dict):
@@ -173,19 +182,19 @@ class Core:
             if reference_context_id:
                 context = await context_loader.load(
                     user_id = reference_context_id,
-                    New_Message = message,
-                    Role_Name = role_name if role_name else username,
+                    message = message,
+                    role = role,
+                    roleName = role_name if role_name else user_name,
                     load_prompt = load_prompt,
                     continue_completion = continue_completion
                 )
             else:
                 context = await context_loader.load(
                     user_id = user_id,
-                    New_Message = message,
-                    Role_Name = role_name,
+                    message = message,
+                    role = role,
                     load_prompt = load_prompt,
-                    continue_completion = continue_completion,
-                    reference_context_id = reference_context_id
+                    continue_completion = continue_completion
                 )
             
             request = Request()
@@ -199,7 +208,7 @@ class Core:
             request.key = api.api_key
             logger.info(f"API URL: {api.url}", user_id = user_id)
             logger.info(f"API Model: {api.model_name}", user_id = user_id)
-            logger.info(f"Message: \n{request.context.new_content}", user_id = user_id)
+            logger.info(f"Message: \n{request.context.context_list[-1].content}", user_id = user_id)
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.user_name = user_name
@@ -226,7 +235,7 @@ class Core:
                 print_chunk = print_chunk,
                 config = config
             )
-            response.context.new_content = prompt_vp.process(response.context.new_content)
+            response.context.last_content.content = prompt_vp.process(response.context.last_content.content)
             logger.info(f"Prompt Hits Variable: {prompt_vp.hit_var()}/{prompt_vp.discover_var()}({prompt_vp.hit_var() / prompt_vp.discover_var() if prompt_vp.discover_var() != 0 else 0:.2%})", user_id = user_id)
             if save_context:
                 await context_loader.save(
@@ -242,8 +251,7 @@ class Core:
 
             logger.success(f"API call successful", user_id = user_id)
             return {
-                "reasoning_content": response.context.reasoning_content,
-                "content": response.context.new_content,
+                "reasoning_content": response.context.last_content.reasoning_content,
+                "content": response.context.last_content.content,
             }
     # endregion
-

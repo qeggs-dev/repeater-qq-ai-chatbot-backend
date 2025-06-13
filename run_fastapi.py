@@ -28,7 +28,8 @@ from loguru import logger
 
 # ==== 自定义库 ==== #
 from core import (
-    Core
+    Core,
+    ApiInfo
 )
 from Markdown import markdown_to_image
 from Markdown import STYLES as MARKDOWN_STYLES
@@ -100,6 +101,7 @@ async def chat_endpoint(
     user_id: str,
     message: str = Form(""),
     user_name: str = Form(""),
+    role: str = Form("user"),
     role_name: str = Form(None),
     model_type: str = Form("chat"),
     load_prompt: bool = Form(True),
@@ -113,18 +115,22 @@ async def chat_endpoint(
     """
     if continue_completion and message:
         raise HTTPException(detail="Cannot send message when continuing completion", status_code=400)
-    context = await chat.Chat(
-        user_id = user_id,
-        message = message,
-        user_name = user_name,
-        role_name = role_name,
-        model_type = model_type,
-        print_chunk = True,
-        load_prompt = load_prompt,
-        save_context = save_context,
-        reference_context_id = reference_context_id,
-        continue_completion = continue_completion
-    )
+    try:
+        context = await chat.Chat(
+            user_id = user_id,
+            message = message,
+            user_name = user_name,
+            role = role,
+            role_name = role_name,
+            model_type = model_type,
+            print_chunk = True,
+            load_prompt = load_prompt,
+            save_context = save_context,
+            reference_context_id = reference_context_id,
+            continue_completion = continue_completion
+        )
+    except ApiInfo.APIGroupNotFoundError as e:
+        raise HTTPException(detail=str(e), status_code=400)
     if rendering:
         text = ""
         if 'reasoning_content' in context and context['reasoning_content']:

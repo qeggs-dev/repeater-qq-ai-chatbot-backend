@@ -1,6 +1,6 @@
-from .object import ContextObject
+from .object import ContextObject, ContentUnit, ContextRole
 from .object import (
-    FunctionResponse,
+    FunctionResponseUnit,
     CallingFunction,
     FunctionParameters,
     CallingFunctionRequest,

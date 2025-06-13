@@ -7,6 +7,7 @@ from typing import (
 )
 import time
 from pathlib import Path
+import orjson
 
 # ==== 第三方库 ==== #
 from openai import AsyncOpenAI
@@ -21,7 +22,10 @@ from ..DataManager import (
 )
 from .object import (
     ContextObject,
+    ContentUnit,
+    ContextRole
 )
+from .exceptions import *
 from TextProcessors import (
     PromptVP,
     limit_blank_lines,
@@ -44,88 +48,119 @@ class ContextLoader:
         self.prompt_vp = prompt_vp
     
     async def _load_prompt(self, context:ContextObject, user_id: str) -> ContextObject:
-        # 从环境变量中获取默认提示词文件位置
-        default_prompt_dir = env.path("DEFAULT_PROMPT_DIR", Path())
-        if default_prompt_dir.exists():
-            # 如果存在默认提示词文件，则加载默认提示词文件
-            config = await self.config.load(user_id)
-            if not isinstance(config, dict):
-                config = {}
-
-            parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME"))
-
-            default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
-            if default_prompt_file.exists():
-                logger.info(f"Load Default Prompt File: {default_prompt_file}", user_id = user_id)
-                async with aiofiles.open(default_prompt_file, mode="r", encoding="utf-8") as f:
-                    context.prompt = await f.read()
         user_prompt:str = await self.prompt.load(user_id=user_id, default='')
         if user_prompt:
-            context.prompt = user_prompt
-        context.prompt = await self._expand_variables(context.prompt, variables = self.prompt_vp, user_id=user_id)
+            # 使用用户提示词
+            prompt = user_prompt
+            logger.info(f"Load User Prompt", user_id = user_id)
+        else:
+            # 加载默认提示词
+            default_prompt_dir = env.path("DEFAULT_PROMPT_DIR", Path())
+            if default_prompt_dir.exists():
+                # 如果存在默认提示词文件，则加载默认提示词文件
+                config = await self.config.load(user_id)
+                if not isinstance(config, dict):
+                    config = {}
+
+                parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME"))
+
+                default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
+                if default_prompt_file.exists():
+                    logger.info(f"Load Default Prompt File: {default_prompt_file}", user_id = user_id)
+                    async with aiofiles.open(default_prompt_file, mode="r", encoding="utf-8") as f:
+                        prompt = await f.read()
+        # 展开变量
+        prompt = await self._expand_variables(prompt, variables = self.prompt_vp, user_id=user_id)
+
+        prompt = ContentUnit(
+            role = ContextRole.SYSTEM,
+            content = prompt
+        )
+        context.prompt = prompt
         return context
 
-    async def _load_context(
+    async def _append_context(
         self,
         context:ContextObject,
         user_id: str,
         New_Message: str,
-        Role_Name: str | None = None,
-        Message_Role: str = 'user',
-        Message_Role_Name: str | None = None,
+        role: str = 'user',
+        roleName: str | None = None,
         continue_completion: bool = False
     ) -> ContextObject:
-        context_list = await self.context.load(user_id=user_id, default=[])
-        if continue_completion:
-            if context_list:
-                user_context:list[dict] = context_list[:-1]
-                newmsg = context_list[-1]
-                if 'reasoning_content' in newmsg:
-                    context.reasoning_content = newmsg['reasoning_content']
-                if 'content' in newmsg:
-                    context.new_content = newmsg['content']
-                if 'role' in newmsg:
-                    context.new_content_role = newmsg['role']
-                    if context.new_content_role == "assistant":
-                        context.prefix = True
-                if 'name' in newmsg:
-                    context.new_content_role_name = newmsg['name']
-        else:
-            user_context:list[dict] = context_list
-            context.context_list = user_context
-            context.new_content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
-            context.new_content_role = Message_Role
-            context.new_content_role_name = Message_Role_Name
-            if Role_Name:
-                context.new_content_role_name = Role_Name
+        """
+        添加上下文
+
+        :param context: 上下文对象
+        :param user_id: 用户ID
+        :param New_Message: 新消息
+        :param role: 角色
+        :param roleName: 角色名称
+        :param continue_completion: 是否继续完成
+        :return: 上下文对象
+        """
+        try:
+            context_list = await self.context.load(user_id=user_id, default=[])
+        except orjson.JSONDecodeError:
+            raise ContextFileSyntaxError(f"Context File Syntax Error: {user_id}")
+        if not continue_completion:
+            # 构建并添加新的上下文
+            contextObj = ContextObject()
+            content = ContentUnit()
+            content.content = New_Message
+            content.role = ContextRole(role)
+            content.role_name = roleName
+            contextObj.from_context(context_list)
+            logger.info(f"Load Context: {len(contextObj.context_list)}", user_id = user_id)
+
+            if context.context_list is None:
+                context.context_list = []
+            if contextObj.context_list:
+                context.context_list += contextObj.context_list
+            context.context_list.append(content)
         return context
     
     async def load(
         self,
         user_id: str,
-        New_Message: str,
-        Role_Name: str | None = None,
-        Message_Role: str = 'user',
-        Message_Role_Name: str | None = None,
+        message: str,
+        role: str = 'user',
+        roleName: str | None = None,
         load_prompt: bool = True,
         continue_completion: bool = False
     ) -> ContextObject:
+        """
+        加载上下文
+
+        :param user_id: 用户ID
+        :param message: 消息内容
+        :param role: 角色
+        :param roleName: 角色名称
+        :param load_prompt: 是否加载提示词
+        :param continue_completion: 是否继续生成
+        """
         if load_prompt:
             context = await self._load_prompt(ContextObject(), user_id=user_id)
         else:
             context = ContextObject()
-        context = await self._load_context(
+        context = await self._append_context(
             context = context,
             user_id = user_id,
-            New_Message = New_Message,
-            Role_Name = Role_Name,
-            Message_Role = Message_Role,
-            Message_Role_Name = Message_Role_Name,
+            New_Message = message,
+            role = role,
+            roleName = roleName,
             continue_completion = continue_completion
         )
         return context
     
     async def _expand_variables(self, prompt: str, variables: PromptVP, user_id: str) -> str:
+        """
+        展开变量
+
+        :param prompt: 提示词
+        :param variables: 变量
+        :param user_id: 用户ID
+        """
         variables.reset_counter()
         prompt = variables.process(prompt)
         logger.info(f"Prompt Hits Variable: {variables.hit_var()}/{variables.discover_var()}({variables.hit_var() / variables.discover_var() if variables.discover_var() != 0 else 0:.2%})", user_id = user_id)
@@ -138,6 +173,10 @@ class ContextLoader:
         user_id: str,
         context: ContextObject,
     ) -> None:
-        context = copy.deepcopy(context)
-        context.prompt = ''
-        await self.context.save(user_id, context.full_context)
+        """
+        保存上下文
+
+        :param user_id: 用户ID
+        :param context: 上下文对象
+        """
+        await self.context.save(user_id, context.context)

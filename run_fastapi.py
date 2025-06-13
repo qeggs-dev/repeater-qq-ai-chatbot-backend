@@ -1,8 +1,11 @@
+# ==== 标准库 ==== #
 import os
 import asyncio
 from uuid import uuid4
 from typing import Any
 
+# ==== 第三方库 ==== #
+import orjson
 from environs import Env
 from dotenv import load_dotenv
 from fastapi import (
@@ -15,13 +18,15 @@ from fastapi import (
 from fastapi.responses import (
     FileResponse,
     JSONResponse,
-    PlainTextResponse
+    PlainTextResponse,
+    StreamingResponse
 )
 from fastapi.exceptions import (
     HTTPException
 )
 from loguru import logger
 
+# ==== 自定义库 ==== #
 from core import (
     Core
 )
@@ -95,22 +100,30 @@ async def chat_endpoint(
     user_id: str,
     message: str = Form(""),
     user_name: str = Form(""),
+    role_name: str = Form(None),
     model_type: str = Form("chat"),
     load_prompt: bool = Form(True),
     rendering: bool = Form(False),
     save_context: bool = Form(True),
+    reference_context_id: str = Form(None),
+    continue_completion: bool = Form(False)
 ):
     """
     Endpoint for chat
     """
+    if continue_completion and message:
+        raise HTTPException(detail="Cannot send message when continuing completion", status_code=400)
     context = await chat.Chat(
         user_id = user_id,
         message = message,
         user_name = user_name,
+        role_name = role_name,
         model_type = model_type,
         print_chunk = True,
         load_prompt = load_prompt,
-        save_context = save_context
+        save_context = save_context,
+        reference_context_id = reference_context_id,
+        continue_completion = continue_completion
     )
     if rendering:
         text = ""
@@ -118,11 +131,16 @@ async def chat_endpoint(
             text += ('> ' + context['reasoning_content'].replace('\n', '\n> ')).strip() + '\n\n---\n\n'
         text += context['content']
         fuuid = uuid4()
+        filename = f"{fuuid}.png"
 
-        async def _wait_delete(sleep_time: int):
-            await asyncio.sleep(sleep_time)
-            await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / f"{fuuid}.png")
-            logger.info(f'Deleted image {fuuid}.png', user_id=user_id)
+        async def _wait_delete(sleep_time: int, filename: str):
+            async def _delete(filename: str):
+                await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
+                logger.info(f'Deleted image {filename}', user_id=user_id)
+            try:
+                await asyncio.sleep(sleep_time)
+            finally:
+                await _delete(filename)
         
         config:dict = await chat.user_config_manager.load(user_id, default={})
         default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")
@@ -130,19 +148,40 @@ async def chat_endpoint(
             style = config.get('render_style', default_style)
         else:
             style = default_style
-        logger.info(f'Rendering image {fuuid}.png for \"{style}\" style', user_id=user_id)
+        logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
         await asyncio.to_thread(
             markdown_to_image,
             markdown_text = text,
-            output_path = env.path("RENDERED_IMAGE_DIR") / f"{fuuid}.png",
+            output_path = env.path("RENDERED_IMAGE_DIR") / filename,
             style = style
         )
-        logger.info(f'Created image {fuuid}.png', user_id=user_id)
-        background_tasks.add_task(_wait_delete, 60)
+        logger.info(f'Created image {filename}', user_id=user_id)
+        background_tasks.add_task(_wait_delete, 60, filename)
         fileurl = request.url_for("render_file", file_uuid=fuuid)
         context['image_url'] = str(fileurl)
         context['file_uuid'] = str(fuuid)
     return JSONResponse(context)
+# endregion
+
+# region PromptVariableExpansion
+@app.post("/userdata/variable/expand/{user_id}")
+async def expand_variables(user_id: str, username: str = Form(...), text: str = Form(...)):
+    """
+    Endpoint for expanding variables
+    """
+    config = await chat.user_config_manager.load(user_id=user_id)
+    if not config or not isinstance(config, dict):
+        config = {}
+    prompt_vp = await chat.get_prompt_vp(
+        user_id = user_id,
+        user_name = username,
+        model_type = "nomodel",
+        print_chunk = True,
+        config = config
+    )
+    output = prompt_vp.process(text)
+    logger.info(f"Prompt Hits Variable: {prompt_vp.hit_var()}/{prompt_vp.discover_var()}({prompt_vp.hit_var() / prompt_vp.discover_var() if prompt_vp.discover_var() != 0 else 0:.2%})", user_id = user_id)
+    return PlainTextResponse(output)
 # endregion
 
 # region context manage
@@ -333,6 +372,30 @@ async def get_calllog():
     calllogs = await chat.calllog.read_call_log()
     calllog_list = [calllog_object.as_dict for calllog_object in calllogs]
     return JSONResponse(calllog_list)
+
+@app.get("/calllog/stream")
+async def stream_call_logs():
+    async def generate_jsonl():
+        generator = chat.calllog.read_stream_call_log()
+        async for log_obj in generator:
+            # 转换为字典并使用orjson序列化
+            json_line = orjson.dumps(
+                log_obj.as_dict,
+                option=orjson.OPT_APPEND_NEWLINE
+            )
+            yield json_line
+
+    return StreamingResponse(
+        generate_jsonl(),
+        media_type="application/x-ndjson",  # 保持JSONL格式
+        headers={
+            # 关键：不设置Content-Disposition，避免浏览器触发下载
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
+# endregion
 
 # region get files
 @app.get("/file/render/{file_uuid}.png", name = "render_file")

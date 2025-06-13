@@ -238,9 +238,9 @@ class Client:
         logger.info("=========== Token Count ============", user_id = user_id)
         logger.info(f"Total Tokens: {model_response.token_usage.total_tokens}", user_id = user_id)
         model_response.calling_log.total_tokens = model_response.token_usage.total_tokens
-        logger.info(f"Prompt Tokens: {model_response.token_usage.prompt_tokens}", user_id = user_id)
+        logger.info(f"Context Input Tokens: {model_response.token_usage.prompt_tokens}", user_id = user_id)
         model_response.calling_log.prompt_tokens = model_response.token_usage.prompt_tokens
-        logger.info(f"Completion Tokens: {model_response.token_usage.completion_tokens}", user_id = user_id)
+        logger.info(f"Completion Output Tokens: {model_response.token_usage.completion_tokens}", user_id = user_id)
         model_response.calling_log.completion_tokens = model_response.token_usage.completion_tokens
         logger.info(f"Cache Hit Count: {model_response.token_usage.prompt_cache_hit_tokens}", user_id = user_id)
         model_response.calling_log.cache_hit_count = model_response.token_usage.prompt_cache_hit_tokens

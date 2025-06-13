@@ -65,15 +65,51 @@ class ContextLoader:
         context.prompt = await self._expand_variables(context.prompt, variables = self.prompt_vp, user_id=user_id)
         return context
 
-    async def _load_context(self, context:ContextObject, user_id: str, New_Message: str, Message_Role: str = 'user', Message_Role_Name: str | None = None) -> ContextObject:
-        user_context:list[dict] = await self.context.load(user_id=user_id, default=[])
-        context.context_list = user_context
-        context.new_content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
-        context.new_content_role = Message_Role
-        context.new_content_role_name = Message_Role_Name
+    async def _load_context(
+        self,
+        context:ContextObject,
+        user_id: str,
+        New_Message: str,
+        Role_Name: str | None = None,
+        Message_Role: str = 'user',
+        Message_Role_Name: str | None = None,
+        continue_completion: bool = False
+    ) -> ContextObject:
+        context_list = await self.context.load(user_id=user_id, default=[])
+        if continue_completion:
+            if context_list:
+                user_context:list[dict] = context_list[:-1]
+                newmsg = context_list[-1]
+                if 'reasoning_content' in newmsg:
+                    context.reasoning_content = newmsg['reasoning_content']
+                if 'content' in newmsg:
+                    context.new_content = newmsg['content']
+                if 'role' in newmsg:
+                    context.new_content_role = newmsg['role']
+                    if context.new_content_role == "assistant":
+                        context.prefix = True
+                if 'name' in newmsg:
+                    context.new_content_role_name = newmsg['name']
+        else:
+            user_context:list[dict] = context_list
+            context.context_list = user_context
+            context.new_content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
+            context.new_content_role = Message_Role
+            context.new_content_role_name = Message_Role_Name
+            if Role_Name:
+                context.new_content_role_name = Role_Name
         return context
     
-    async def load(self, user_id: str, New_Message: str, Message_Role: str = 'user', Message_Role_Name: str | None = None, load_prompt: bool = True) -> ContextObject:
+    async def load(
+        self,
+        user_id: str,
+        New_Message: str,
+        Role_Name: str | None = None,
+        Message_Role: str = 'user',
+        Message_Role_Name: str | None = None,
+        load_prompt: bool = True,
+        continue_completion: bool = False
+    ) -> ContextObject:
         if load_prompt:
             context = await self._load_prompt(ContextObject(), user_id=user_id)
         else:
@@ -82,8 +118,10 @@ class ContextLoader:
             context = context,
             user_id = user_id,
             New_Message = New_Message,
+            Role_Name = Role_Name,
             Message_Role = Message_Role,
-            Message_Role_Name = Message_Role_Name
+            Message_Role_Name = Message_Role_Name,
+            continue_completion = continue_completion
         )
         return context
     

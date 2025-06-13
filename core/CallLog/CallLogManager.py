@@ -4,7 +4,7 @@ import orjson
 import copy
 from loguru import logger
 from pathlib import Path
-from typing import List
+from typing import List, AsyncIterator
 from .CallLogObject import CallLogObject
 
 
@@ -44,7 +44,7 @@ class CallLogManager:
         self.log_list.clear()
 
     async def _save_call_log_async(self) -> None:
-        """保存队列中的所有日志到文件"""
+        """异步保存队列中的所有日志到文件"""
         if not self.log_list:
             return
         
@@ -63,15 +63,41 @@ class CallLogManager:
 
     async def read_call_log(self) -> List[CallLogObject]:
         """从文件读取所有调用日志"""
-        async with self.lock:
-            call_log_list = copy.deepcopy(self.log_list)
+        call_log_list = []
         if self.log_file.exists():
             async with aiofiles.open(self.log_file, 'rb') as f:
                 async for line in f:
                     data = await asyncio.to_thread(orjson.loads, line)
                     call_log_list.append(CallLogObject.from_dict(data))
+        async with self.lock:
+            call_log_list += copy.deepcopy(self.log_list)
         logger.info(f"Read {len(call_log_list)} call logs from file", user_id="[System]")
         return call_log_list
+
+    async def read_stream_call_log(self) -> AsyncIterator[CallLogObject]:
+        """从文件流式读取所有调用日志"""
+        # 深拷贝内存日志
+        async with self.lock:
+            mem_logs = copy.deepcopy(self.log_list)
+        mem_log_count = len(mem_logs)
+        
+        # 读取文件日志
+        file_log_count = 0
+        if self.log_file.exists():
+            async with aiofiles.open(self.log_file, 'rb') as f:
+                async for line in f:
+                    data = await asyncio.to_thread(orjson.loads, line)
+                    yield CallLogObject.from_dict(data)  # 生成文件日志
+                    file_log_count += 1  # 正确计数
+        
+        # 生成内存日志
+        for log in mem_logs:
+            yield log
+
+        # 正确记录总数（所有日志已生成）
+        total = file_log_count + mem_log_count
+        logger.info(f"Read {total} call logs from file", user_id="[System]")
+        
     
     def save_call_log(self) -> None:
         """手动保存日志到文件"""

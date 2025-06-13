@@ -17,14 +17,14 @@ class SubManager:
         sub_dir_name = sanitize_filename(sub_dir_name)
         self.sub_dir_name = sub_dir_name
         self.lock = asyncio.Lock()
+        if not self.base_path.exists():
+            self.base_path.mkdir(parents=True, exist_ok=True)
 
     @property
     def _default_base_file(self) -> Path:
         return self.base_path / self.sub_dir_name
     @property
     def _get_metadata_file_path(self) -> Path:
-        if not self.base_path.exists():
-            self.base_path.mkdir(parents=True, exist_ok=True)
         return self.base_path / "metadata.json"
     
     def _get_file_path(self, name: str) -> Path:
@@ -34,10 +34,8 @@ class SubManager:
         return self._default_base_file / f"{name}.json"
     
     
-    async def load_metadata(self, default: Any = None) -> Any:
+    async def load_metadata(self, default: Any | None = None) -> Any:
         async with self.lock:
-            if not os.path.exists(self._get_metadata_file_path):
-                return default
             try:
                 async with aiofiles.open(self._get_metadata_file_path, "rb") as f:
                     fdata = await f.read()
@@ -53,10 +51,8 @@ class SubManager:
                 fdata = await asyncio.to_thread(orjson.dumps, data)
                 await f.write(fdata)
     
-    async def load(self, item: str, default: Any = None) -> Any:
+    async def load(self, item: str, default: Any | None = None) -> Any:
         async with self.lock:
-            if not os.path.exists(self._get_file_path(item)):
-                return default
             try:
                 async with aiofiles.open(self._get_file_path(item), "rb") as f:
                     fdata = await f.read()

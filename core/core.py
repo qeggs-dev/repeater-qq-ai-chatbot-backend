@@ -6,6 +6,7 @@ import atexit
 from typing import (
     Coroutine,
 )
+import random
 
 # ==== 第三方库 ==== #
 from environs import Env
@@ -37,6 +38,9 @@ from .CallLog import (
     CallLogManager,
     CallLog
 )
+from TextProcessors import (
+    PromptVP
+)
 from TimeParser import (
     format_timestamp,
     get_birthday_countdown,
@@ -51,7 +55,7 @@ env = Env()
 __version__ = '4.0.0.0 Beta'
 
 class Core:
-    def __init__(self, max_concurrency: int = None):
+    def __init__(self, max_concurrency: int | None = None):
         self.client = Client(env.int('MAX_CONCURRENCY', 10) if max_concurrency is None else max_concurrency)
 
         logger.remove()  # 移除默认处理器
@@ -81,6 +85,51 @@ class Core:
                 self.session_locks[user_id] = asyncio.Lock()
             lock = self.session_locks[user_id]
         return lock
+    
+    async def get_prompt_vp(
+        self,
+        user_id: str,
+        user_name: str = "",
+        model_type: str = "",
+        print_chunk: bool = True,
+        config: dict = {}
+    ) -> PromptVP:
+        return await self.promptvariable.get_prompt_variable(
+            user_id = user_id,
+            user_name = user_name,
+            BirthdayCountdown = lambda **kw: get_birthday_countdown(
+                env.int("BIRTHDAY_MONTH"),
+                env.int("BIRTHDAY_DAY"),
+                name=env.str(
+                    "BOT_NAME",
+                    default = ""
+                )
+            ),
+            model_type = model_type,
+            print_chunk = str(print_chunk),
+            birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
+            zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
+            time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z'),
+            age = lambda **kw: calculate_age(env.int("BIRTHDAY_YEAR"), env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY"), offset_timezone = config.get("timezone", env.int("TIMEZONE_OFFSET", default=8))),
+            random = lambda min, max: random.randint(int(min), int(max)),
+            randfloat = lambda min, max: random.uniform(float(min), float(max)),
+            randchoice = lambda *args: random.choice(args)
+        )
+    async def load_nickname_mapping(self, user_id: str, user_name: str) -> str:
+        async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
+            fdata = await f.read()
+            try:
+                nickname_mapping = orjson.loads(fdata)
+            except orjson.JSONDecodeError:
+                nickname_mapping = {}
+        
+        if user_name in nickname_mapping:
+            logger.info(f"User Name [{user_name}] -> [{nickname_mapping[user_name]}]", user_id=user_id)
+            user_name = nickname_mapping[user_name]
+        elif user_id in nickname_mapping:
+            user_name = nickname_mapping[user_id]
+        
+        return user_name
 
     # region > Chat
     async def Chat(
@@ -88,27 +137,21 @@ class Core:
         message: str,
         user_id: str,
         user_name: str,
+        role_name: str = "",
         model_type: str = "",
         load_prompt: bool = True,
         print_chunk: bool = True,
-        save_context: bool = True
+        save_context: bool = True,
+        reference_context_id: str | None = None,
+        continue_completion: bool = False,
     ) -> dict[str, str]:
         task_start_time = time.time_ns()
         lock = await self.get_session_lock(user_id)
         
         async with lock:
-            async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
-                fdata = await f.read()
-                try:
-                    nickname_mapping = orjson.loads(fdata)
-                except orjson.JSONDecodeError:
-                    nickname_mapping = {}
+            logger.info("Start Task", user_id = user_id)
 
-            if user_name in nickname_mapping:
-                logger.info(f"User Name [{user_name}] -> [{nickname_mapping[user_name]}]", user_id=user_id)
-                user_name = nickname_mapping[user_name]
-            elif user_id in nickname_mapping:
-                user_name = nickname_mapping[user_id]
+            username = await self.load_nickname_mapping(user_id, user_name)
 
             config = await self.user_config_manager.load(user_id=user_id)
             if not config or not isinstance(config, dict):
@@ -118,27 +161,32 @@ class Core:
                 config=self.user_config_manager,
                 prompt=self.prompt_manager,
                 context=self.context_manager,
-                prompt_vp = await self.promptvariable.get_prompt_variable(
+                prompt_vp = await self.get_prompt_vp(
                     user_id = user_id,
                     user_name = user_name,
-                    BirthdayCountdown = lambda **kw: get_birthday_countdown(
-                        env.int("BIRTHDAY_MONTH"),
-                        env.int("BIRTHDAY_DAY"),
-                        name=env.str(
-                            "BOT_NAME",
-                            default = ""
-                        )
-                    ),
                     model_type = model_type,
-                    print_chunk = str(print_chunk),
-                    birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
-                    zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
-                    time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z'),
-                    age = lambda **kw: calculate_age(env.int("BIRTHDAY_YEAR"), env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY"), offset_timezone = config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)))
+                    print_chunk = print_chunk,
+                    config = config
                 )
             )
 
-            context = await context_loader.load(user_id=user_id, New_Message=message, load_prompt=load_prompt)
+            if reference_context_id:
+                context = await context_loader.load(
+                    user_id = reference_context_id,
+                    New_Message = message,
+                    Role_Name = role_name if role_name else username,
+                    load_prompt = load_prompt,
+                    continue_completion = continue_completion
+                )
+            else:
+                context = await context_loader.load(
+                    user_id = user_id,
+                    New_Message = message,
+                    Role_Name = role_name,
+                    load_prompt = load_prompt,
+                    continue_completion = continue_completion,
+                    reference_context_id = reference_context_id
+                )
             
             request = Request()
             request.context = context
@@ -171,22 +219,31 @@ class Core:
             response.calling_log.call_prepare_start_time = task_start_time
             response.calling_log.call_prepare_end_time = call_prepare_end_time
             response.calling_log.created_time = response.created
+            prompt_vp = await self.get_prompt_vp(
+                user_id = user_id,
+                user_name = user_name,
+                model_type = model_type,
+                print_chunk = print_chunk,
+                config = config
+            )
+            response.context.new_content = prompt_vp.process(response.context.new_content)
+            logger.info(f"Prompt Hits Variable: {prompt_vp.hit_var()}/{prompt_vp.discover_var()}({prompt_vp.hit_var() / prompt_vp.discover_var() if prompt_vp.discover_var() != 0 else 0:.2%})", user_id = user_id)
             if save_context:
                 await context_loader.save(
-                    user_id=user_id,
-                    context=response.context
+                    user_id = user_id,
+                    context = response.context
                 )
+            else:
+                logger.warning("Context not saved", user_id = user_id)
 
             response.calling_log.task_end_time = time.time_ns()
 
             await self.calllog.add_call_log(response.calling_log)
 
             logger.success(f"API call successful", user_id = user_id)
-            
             return {
                 "reasoning_content": response.context.reasoning_content,
-                "content": response.context.new_content
+                "content": response.context.new_content,
             }
     # endregion
 
-    

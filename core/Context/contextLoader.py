@@ -107,16 +107,15 @@ class ContextLoader:
             # 构建并添加新的上下文
             contextObj = ContextObject()
             content = ContentUnit()
-            content.content = New_Message
+            content.content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
             content.role = ContextRole(role)
             content.role_name = roleName
-            contextObj.from_context(context_list)
+            contextObj.update_from_context(context_list)
             logger.info(f"Load Context: {len(contextObj.context_list)}", user_id = user_id)
 
-            if context.context_list is None:
+            if not context.context_list:
                 context.context_list = []
-            if contextObj.context_list:
-                context.context_list += contextObj.context_list
+            context.context_list += contextObj.context_list
             context.context_list.append(content)
         return context
     

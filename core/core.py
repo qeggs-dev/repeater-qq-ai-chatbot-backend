@@ -146,7 +146,7 @@ class Core:
         user_name: str,
         role: str = "user",
         role_name:  str = "",
-        model_type: str = "",
+        model_type: str | None = None,
         load_prompt: bool = True,
         print_chunk: bool = True,
         save_context: bool = True,
@@ -173,7 +173,7 @@ class Core:
                 prompt_vp = await self.get_prompt_vp(
                     user_id = user_id,
                     user_name = user_name,
-                    model_type = model_type,
+                    model_type = model_type if model_type else config.get("model_type", env.str("DEFAULT_MODEL_TYPE", "chat")),
                     print_chunk = print_chunk,
                     config = config
                 )
@@ -208,7 +208,8 @@ class Core:
             request.key = api.api_key
             logger.info(f"API URL: {api.url}", user_id = user_id)
             logger.info(f"API Model: {api.model_name}", user_id = user_id)
-            logger.info(f"Message: \n{request.context.context_list[-1].content}", user_id = user_id)
+            logger.info("Message: \n", user_id = user_id)
+            print(request.context.last_content.content, file=sys.stderr, flush=True)
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.user_name = user_name

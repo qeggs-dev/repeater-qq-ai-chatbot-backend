@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from .apigroup import ApiGroup
+from .exceptions import *
 
 class ApiInfo:
     def __init__(self, CaseSensitive: bool = False):
@@ -91,17 +92,38 @@ class ApiInfo:
     def find_type(self, model_type: str) -> List[ApiGroup]:
         """Find API groups by model type."""
         if not self.CaseSensitive:
-            return self._api_types.get(model_type.lower(), []).copy()
-        return self._api_types.get(model_type, []).copy()
-    
+            if model_type.lower() in self._api_types:
+                return self._api_types[model_type.lower()].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for model type: {model_type}')
+        else:
+            if model_type in self._api_types:
+                return self._api_types[model_type].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for model type: {model_type}')
     def find_name(self, model_name: str) -> List[ApiGroup]:
         """Find API groups by model name."""
         if not self.CaseSensitive:
-            return self._api_names.get(model_name.lower(), []).copy()
-        return self._api_names.get(model_name, []).copy()
+            if model_name.lower() in self._api_names:
+                return self._api_names[model_name.lower()].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for model name: {model_name}')
+        else:
+            if model_name in self._api_names:
+                return self._api_names[model_name].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for model name: {model_name}')
     
     def find_baseGroup(self, group_name: str) -> List[ApiGroup]:
         """Find API groups by base group name."""
         if not self.CaseSensitive:
-            return self._api_baseGroups.get(group_name.lower(), []).copy()
-        return self._api_baseGroups.get(group_name, []).copy()
+            if group_name.lower() in self._api_baseGroups:
+                return self._api_baseGroups[group_name.lower()].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for base group name: {group_name}')
+        else:
+            if group_name in self._api_baseGroups:
+                return self._api_baseGroups[group_name].copy()
+            else:
+                raise APIGroupNotFoundError(f'API group not found for base group name: {group_name}')
+        

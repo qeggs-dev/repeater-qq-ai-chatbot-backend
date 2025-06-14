@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field, fields, replace
 import orjson
 from enum import Enum
+from typing import Any
 from .exceptions import *
 
 @dataclass
@@ -24,6 +25,9 @@ class CallingFunction:
 
     @property
     def as_dict(self) -> dict:
+        """
+        获取函数对象字典
+        """
         properties = {}
         required = []
         for param in self.parameters:
@@ -47,6 +51,15 @@ class CallingFunction:
             }
         }
 
+class FunctionChoice(Enum):
+    """
+    FunctionCalling选择对象
+    """
+    NONE = 'none'
+    AUTO = 'auto'
+    REQUIRED = 'required'
+    SPECIFY = 'specify'
+
 
 @dataclass
 class CallingFunctionRequest:
@@ -54,21 +67,23 @@ class CallingFunctionRequest:
     FunctionCalling请求对象
     """
     functions: list[CallingFunction] = field(default_factory=list)
-    func_choice: str | None = None
+    func_choice: FunctionChoice | None = None
+    func_choice_name: str | None = None
 
     @property
     def tool_choice(self) -> str | dict | None:
-        if self.func_choice in {'none', 'auto', 'required'}:
-            return self.func_choice
-        elif self.func_choice:
+        """
+        tool_choice字段值
+        """
+        if self.func_choice == FunctionChoice.SPECIFY:
             return {
                 'type': 'function',
                 'function': {
-                    'name': self.func_choice
+                    'name': self.func_choice_name
                 }
             }
         else:
-            return None
+            return self.func_choice.value
     
     @property
     def tools(self) -> list[dict]:
@@ -84,17 +99,30 @@ class FunctionResponseUnit:
     name: str = ''
     arguments_str: str = ''
 
+    def update_from_dict(self, data: dict):
+        """
+        从字典更新对象
+        """
+        other = self.from_dict(data)
+        self.id = other.id
+        self.type = other.type
+        self.name = other.name
+        self.arguments_str = other.arguments_str
+
     @property
-    def arguments(self) -> dict:
+    def arguments(self) -> Any:
         """
-        Returns the arguments as a dictionary.
+        从模型输出的参数字符串中解析出对象
         """
-        return orjson.loads(self.arguments_str)
+        try:
+            return orjson.loads(self.arguments_str)
+        except orjson.JSONDecodeError:
+            raise ContextSyntaxError('Invalid JSON format in function response arguments.')
     
     @property
     def as_dict(self) -> dict:
         """
-        Returns the response as a dictionary.
+        OpenAI兼容的FunctionCalling响应对象单元格式
         """
         return {
             'id': self.id,
@@ -106,39 +134,51 @@ class FunctionResponseUnit:
         }
     
     @classmethod
-    def from_dict(cls, data: dict):
+    def from_dict(cls, data: dict) -> "FunctionResponseUnit":
         """
-        Creates a FunctionResponseUnit from a dictionary.
+        从字典创建对象
+
+        :param data: OpenAI兼容的FunctionCalling响应对象单元格式
         """
+        # 处理id字段
         if 'id' not in data:
             raise ContextNecessaryFieldsMissingError('"id" is a necessary field.')
         elif not isinstance(data['id'], str):
             raise ContextFieldTypeError('"id" must be a string.')
         else:
             id = data['id']
+        
+        # 处理type字段
         if 'type' not in data:
             raise ContextNecessaryFieldsMissingError('"type" is a necessary field.')
         elif not isinstance(data['type'], str):
             raise ContextFieldTypeError('"type" must be a string.')
         else:
             type = data['type']
+        
+        # 处理function字段
         if 'function' not in data:
             raise ContextNecessaryFieldsMissingError('"function" is a necessary field')
         elif not isinstance(data['function'], dict):
             raise ContextFieldTypeError('"function" must be a dictionary.')
         else:
+            # 处理function.name字段
             if 'name' not in data['function']:
                 raise ContextNecessaryFieldsMissingError('"function.name" is a necessary field')
             elif not isinstance(data['function']['name'], str):
                 raise ContextFieldTypeError('"function.name" must be a string')
             else:
                 name = data['function']['name']
+            
+            # 处理function.arguments字段
             if 'arguments' not in data['function']:
                 raise ContextNecessaryFieldsMissingError('"function.arguments" is a necessary field')
             elif not isinstance(data['function']['arguments'], str):
                 raise ContextFieldTypeError('"function.arguments" must be a string')
             else:
                 arguments_str = data['function']['arguments']
+        
+        # 返回对象
         return cls(
             id = id,
             type = type,
@@ -153,20 +193,27 @@ class CallingFunctionResponse:
     """
     callingFunctionResponse:list[FunctionResponseUnit] = field(default_factory=list)
 
+    def update_from_dict(self, content: list[dict]):
+        other = self.from_content(content)
+        self.callingFunctionResponse = other.callingFunctionResponse
+    
     @property
     def as_content(self) -> list[dict]:
         """
-        Returns the response as a list of dictionaries.
+        模型响应对象列表
         """
         return [f.as_dict for f in self.callingFunctionResponse]
     
     @classmethod
     def from_content(cls, content: list[dict]):
         """
-        Creates a CallingFunctionResponse from a list of dictionaries.
+        从模型响应对象列表中构建响应对象
+
+        :param content: 模型响应对象列表
+        :return: 响应对象
         """
         return cls(
-            callingFunctionResponse=[FunctionResponseUnit.from_dict(f) for f in content]
+            callingFunctionResponse = [FunctionResponseUnit().from_dict(f) for f in content]
         )
 
 
@@ -192,11 +239,26 @@ class ContentUnit:
     funcResponse: CallingFunctionResponse | None = None
     tool_call_id: str = ""
     
+    def update_from_content(self, content: dict) -> None:
+        """
+        更新上下文内容
+        :param content: 上下文内容
+        :return:
+        """
+        other = self.from_from_content(content)
+        self.reasoning_content = other.reasoning_content
+        self.content = other.content
+        self.role = other.role
+        self.role_name = other.role_name
+        self.prefix = other.prefix
+        self.funcResponse = other.funcResponse
+        self.tool_call_id = other.tool_call_id
+    
     # 导出为列表
     @property
     def as_content(self) -> list[dict]:
         """
-        导出为content列表
+        OpenAI Message兼容格式列表单元
         """
         content_list = []
         if self.content:
@@ -236,9 +298,12 @@ class ContentUnit:
     
     # 从列表中加载内容
     @classmethod
-    def load_content(cls, context: dict):
+    def from_from_content(cls, context: dict):
         """
-        从字典中加载内容
+        从Message列表单元中加载内容
+
+        :param context: OpenAI Message兼容格式列表单元
+        :return: Context
         """
         content = cls()
 
@@ -249,7 +314,10 @@ class ContentUnit:
         elif context["role"] not in [role.value for role in ContextRole]:
             raise ContextInvalidRoleError(f"Invalid role: {context['role']}")
         else:
-            content.role = ContextRole(context["role"])
+            try:
+                content.role = ContextRole(context["role"])
+            except ValueError:
+                raise ContextInvalidRoleError(f"Invalid role: {context['role']}")
         
         if "content" not in context:
             raise ContextNecessaryFieldsMissingError("Not found content field")
@@ -273,8 +341,8 @@ class ContentUnit:
         if content.role == ContextRole.ASSISTANT:
             if "tool_calls" in context:
                 if not content.funcResponse:
-                    content.funcResponse = FunctionResponse()
-                content.funcResponse.from_content(context["tool_calls"])
+                    content.funcResponse = CallingFunctionResponse()
+                content.funcResponse.update_from_dict(context["tool_calls"])
         
         if content.role == ContextRole.FUNCTION:
             if "tool_call_id" not in context:
@@ -293,10 +361,23 @@ class ContextObject:
     """
     prompt: ContentUnit | None = None
     context_list: list[ContentUnit] = field(default_factory=list)
+    
+    def update_from_context(self, context: list[dict]) -> None:
+        """
+        从上下文列表更新上下文
+        
+        :param context: 上下文列表
+        :return: 构建的对象
+        """
+        other = self.from_context(context)
+        self.context_list = other.context_list
+        self.prompt = other.prompt
 
     @property
     def context(self) -> list[dict]:
-        """Get context list"""
+        """
+        获取上下文
+        """
         context_list = []
         if self.context_list:
             for content in self.context_list:
@@ -305,6 +386,9 @@ class ContextObject:
     
     @property
     def full_context(self) -> list[dict]:
+        """
+        获取上下文，如果有提示词，则添加到最前面
+        """
         context_list = self.context
         if self.prompt:
             context_list = self.prompt.as_content + context_list
@@ -312,24 +396,36 @@ class ContextObject:
     
     @property
     def last_content(self) -> ContentUnit:
-        """Get last content"""
+        """
+        获取最后一个上下文单元
+        """
         if not self.context_list:
             self.context_list.append(ContentUnit())
         return self.context_list[-1]
     
+    def append(self, content: ContentUnit) -> None:
+        """
+        添加上下文单元
+        """
+        self.context_list.append(content)
+    
     @property
     def is_empty(self) -> bool:
+        """
+        判断上下文是否为空
+        """
         return not self.prompt and not self.context_list
     
     @classmethod
     def from_context(cls, context: list[dict]) -> "ContextObject":
-        """从上下文列表创建ContextObject
+        """
+        从上下文列表构建对象
         
         :param context: 上下文列表
-        :return: 新的ContextObject
+        :return: 构建的对象
         """
         contextObj = cls()
         contextObj.context_list = []
         for content in context:
-            contextObj.context_list.append(ContentUnit.load_content(content))
+            contextObj.context_list.append(ContentUnit().from_from_content(content))
         return contextObj

@@ -103,11 +103,11 @@ async def chat_endpoint(
     user_name: str = Form(""),
     role: str = Form("user"),
     role_name: str = Form(None),
-    model_type: str = Form("chat"),
+    model_type: str | None = Form(None),
     load_prompt: bool = Form(True),
     rendering: bool = Form(False),
     save_context: bool = Form(True),
-    reference_context_id: str = Form(None),
+    reference_context_id: str | None = Form(None),
     continue_completion: bool = Form(False)
 ):
     """

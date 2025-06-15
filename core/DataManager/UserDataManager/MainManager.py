@@ -25,6 +25,16 @@ class MainManager:
             item = 'default'
         return await manager.load(item, default)
     
+    async def loadstr(self, user_id: str, default: Any = None) -> str:
+        user_id = await sanitize_filename_async(user_id)
+        manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))
+        metadata = await manager.load_metadata()
+        if isinstance(metadata, dict):
+            item = metadata.get('default_item', 'default')
+        else:
+            item = 'default'
+        return await manager.loadstr(item, default)
+    
     async def save(self, user_id: str, data: Any) -> None:
         user_id = await sanitize_filename_async(user_id)
         manager = self.sub_managers.setdefault(user_id, SubManager(env.path('USER_DATA_DIR') / self.base_name / user_id, "ParallelData"))

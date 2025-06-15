@@ -3,6 +3,9 @@ import os
 import asyncio
 from uuid import uuid4
 from typing import Any
+from io import BytesIO
+import zipfile
+import json
 
 # ==== 第三方库 ==== #
 import orjson
@@ -368,6 +371,21 @@ async def delete_config(user_id: str):
     await chat.user_config_manager.delete(user_id)
     return PlainTextResponse("Config deleted successfully")
 # endregion
+
+# region userdata_file
+
+@app.get("/userdata/file/{user_id}.zip")
+async def get_userdata_file(user_id: str):
+    """
+    Endpoint for getting userdata file
+    """
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, "w") as zipf:
+        zipf.writestr("user_context.json", json.dumps(await chat.context_manager.load(user_id = user_id, default = {}), indent = 4, ensure_ascii=False))
+        zipf.writestr("user_config.json", json.dumps(await chat.user_config_manager.load(user_id = user_id, default = []), indent = 4, ensure_ascii=False))
+        zipf.writestr("user_prompt.json", json.dumps(await chat.prompt_manager.load(user_id = user_id, default = ""), indent = 4, ensure_ascii=False))
+    buffer.seek(0)
+    return StreamingResponse(buffer, media_type = "application/zip")
 
 # region get calllog
 @app.get("/calllog")

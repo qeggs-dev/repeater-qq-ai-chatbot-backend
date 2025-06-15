@@ -245,7 +245,7 @@ class ContentUnit:
         :param content: 上下文内容
         :return:
         """
-        other = self.from_from_content(content)
+        other = self.from_content(content)
         self.reasoning_content = other.reasoning_content
         self.content = other.content
         self.role = other.role
@@ -298,7 +298,7 @@ class ContentUnit:
     
     # 从列表中加载内容
     @classmethod
-    def from_from_content(cls, context: dict):
+    def from_content(cls, context: dict):
         """
         从Message列表单元中加载内容
 
@@ -427,5 +427,5 @@ class ContextObject:
         contextObj = cls()
         contextObj.context_list = []
         for content in context:
-            contextObj.context_list.append(ContentUnit().from_from_content(content))
+            contextObj.context_list.append(ContentUnit().from_content(content))
         return contextObj

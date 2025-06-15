@@ -102,7 +102,7 @@ class ContextLoader:
         try:
             context_list = await self.context.load(user_id=user_id, default=[])
         except orjson.JSONDecodeError:
-            raise ContextFileSyntaxError(f"Context File Syntax Error: {user_id}")
+            raise ContextLoadingSyntaxError(f"Context File Syntax Error: {user_id}")
         if not continue_completion:
             # 构建并添加新的上下文
             contextObj = ContextObject()

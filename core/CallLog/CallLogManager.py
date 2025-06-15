@@ -13,13 +13,13 @@ class CallLogManager:
         self.log_list: List[CallLogObject] = []
         self.max_log_length = max_log_length
         self.log_file = log_file
-        self.lock = asyncio.Lock()
+        self.async_lock = asyncio.Lock()
         
         # 确保日志目录存在
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
     async def add_call_log(self, call_log: CallLogObject) -> None:
-        async with self.lock:
+        async with self.async_lock:
             self.log_list.append(call_log)
             logger.info("Call log added", user_id=call_log.user_id)
             if len(self.log_list) > self.max_log_length:
@@ -69,7 +69,7 @@ class CallLogManager:
                 async for line in f:
                     data = await asyncio.to_thread(orjson.loads, line)
                     call_log_list.append(CallLogObject.from_dict(data))
-        async with self.lock:
+        async with self.async_lock:
             call_log_list += copy.deepcopy(self.log_list)
         logger.info(f"Read {len(call_log_list)} call logs from file", user_id="[System]")
         return call_log_list
@@ -77,7 +77,7 @@ class CallLogManager:
     async def read_stream_call_log(self) -> AsyncIterator[CallLogObject]:
         """从文件流式读取所有调用日志"""
         # 深拷贝内存日志
-        async with self.lock:
+        async with self.async_lock:
             mem_logs = copy.deepcopy(self.log_list)
         mem_log_count = len(mem_logs)
         
@@ -105,4 +105,5 @@ class CallLogManager:
     
     async def save_call_log_async(self) -> None:
         """手动保存日志到文件"""
-        await self._save_call_log_async()
+        async with self.async_lock:
+            await self._save_call_log_async()

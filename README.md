@@ -118,6 +118,17 @@
 
 ---
 
+## 模型
+
+| 模型 | 描述 |
+| :---: | :---: |
+| `chat` | 聊天 |
+| `reasoner` | 推理 |
+| `coder` | 编码 |
+| `prover` | 证明 |
+
+---
+
 ## 命令表
 
 | 命令                       | 别名   | 全名                       | 功能描述                       | 参数描述                                  | 版本      | 命令版本 | 描述 |
@@ -139,3 +150,4 @@
 | `deletePrompt`             | `dp`  | `DeletePrompt`             | 删除提示词                     | 无                                        | 4.0 Beta | 1.0     | 删除提示词 |
 | `deleteContext`            | `dc`  | `DeleteContext`            | 删除上下文                     | 无                                        | 4.0 Beta | 1.0     | 删除上下文 |
 | `varExpand`                | `ve`  | `VarExpand`                | 变量展开                       | 文本模板(使用大括号作为变量标记)            | 4.0 Beta | 1.0     | 变量展开 |
+| `setDefaultModel`          | `sdm` | `SetDefaultModel`          | 设置默认模型                   | [模型](#模型)                              | 4.0 Beta | 1.0     | 设置默认使用的模型 |

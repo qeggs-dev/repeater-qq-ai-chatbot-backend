@@ -80,7 +80,7 @@ class Core:
 
         atexit.register(_exit)
 
-    async def get_session_lock(self, user_id: str) -> asyncio.Lock:
+    async def _get_session_lock(self, user_id: str) -> asyncio.Lock:
         async with self.lock:
             if user_id not in self.session_locks:
                 self.session_locks[user_id] = asyncio.Lock()
@@ -154,7 +154,7 @@ class Core:
         continue_completion: bool = False,
     ) -> dict[str, str]:
         task_start_time = time.time_ns()
-        lock = await self.get_session_lock(user_id)
+        lock = await self._get_session_lock(user_id)
         
         async with lock:
             logger.info("====================================", user_id = user_id)
@@ -165,6 +165,9 @@ class Core:
             config = await self.user_config_manager.load(user_id=user_id)
             if not config or not isinstance(config, dict):
                 config = {}
+            
+            if not model_type:
+                model_type = config.get("model_type", env.str("DEFAULT_MODEL_TYPE", "chat"))
 
             context_loader = ContextLoader(
                 config=self.user_config_manager,
@@ -173,7 +176,7 @@ class Core:
                 prompt_vp = await self.get_prompt_vp(
                     user_id = user_id,
                     user_name = user_name,
-                    model_type = model_type if model_type else config.get("model_type", env.str("DEFAULT_MODEL_TYPE", "chat")),
+                    model_type = model_type,
                     print_chunk = print_chunk,
                     config = config
                 )
@@ -200,7 +203,7 @@ class Core:
             request = Request()
             request.context = context
     
-            apilist = self.apiinfo.find_type(model_type=model_type)
+            apilist = self.apiinfo.find_type(model_type = model_type)
             api = apilist[0]
             
             request.url = api.url
@@ -208,8 +211,11 @@ class Core:
             request.key = api.api_key
             logger.info(f"API URL: {api.url}", user_id = user_id)
             logger.info(f"API Model: {api.model_name}", user_id = user_id)
-            logger.info("Message: \n", user_id = user_id)
-            print(request.context.last_content.content, file=sys.stderr, flush=True)
+            if request.context.last_content.content:
+                logger.info("Message:", user_id = user_id)
+                print(request.context.last_content.content, file=sys.stderr, flush=True)
+            else:
+                logger.warning("No message to send", user_id = user_id)
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.user_name = user_name
@@ -254,5 +260,8 @@ class Core:
             return {
                 "reasoning_content": response.context.last_content.reasoning_content,
                 "content": response.context.last_content.content,
+                "model_name": api.model_name,
+                "model_type": api.model_type,
+                "model_id": api.model_id,
             }
     # endregion

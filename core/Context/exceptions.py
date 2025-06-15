@@ -6,19 +6,14 @@ class ContextSyntaxError(ContextManagerException):
 
 
 
-class ContextFileSyntaxError(ContextSyntaxError):
+class ContextLoadingSyntaxError(ContextSyntaxError):
     pass
 
-class ContextNecessaryFieldsMissingError(ContextFileSyntaxError):
+class ContextNecessaryFieldsMissingError(ContextLoadingSyntaxError):
     pass
 
-class ContextFieldTypeError(ContextFileSyntaxError):
+class ContextFieldTypeError(ContextSyntaxError):
     pass
 
-class ContextInvalidRoleError(ContextFileSyntaxError):
-    pass
-
-
-
-class ContextInvalidRoleError(ContextManagerException):
+class ContextInvalidRoleError(ContextSyntaxError):
     pass

@@ -62,6 +62,15 @@ class SubManager:
             except orjson.JSONDecodeError:
                 return default
     
+    async def loadstr(self, item: str, default: Any | None = None) -> str:
+        async with self.lock:
+            try:
+                async with aiofiles.open(self._get_file_path(item), "r", encoding="utf-8") as f:
+                    fdata = await f.read()
+                    return fdata
+            except FileNotFoundError:
+                return default
+    
     async def save(self, item: str, data: Any) -> None:
         async with self.lock:
             async with aiofiles.open(self._get_file_path(item), "wb") as f:

@@ -13,6 +13,11 @@
                 "Name": "Deepseek V3",
                 "Id": "deepseek-chat",
                 "Type": "chat"
+            },
+            {
+                "Name": "Deepseek Coder",
+                "Id": "deepseek-coder",
+                "Type": "coder"
             }
         ]
     },

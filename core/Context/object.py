@@ -238,6 +238,12 @@ class ContentUnit:
     prefix: bool | None = None
     funcResponse: CallingFunctionResponse | None = None
     tool_call_id: str = ""
+
+    def __len__(self):
+        if self.reasoning_content:
+            return len(self.reasoning_content)
+        else:
+            return len(self.content)
     
     def update_from_content(self, content: dict) -> None:
         """
@@ -361,6 +367,9 @@ class ContextObject:
     """
     prompt: ContentUnit | None = None
     context_list: list[ContentUnit] = field(default_factory=list)
+
+    def __len__(self):
+        return len(self.context_list)
     
     def update_from_context(self, context: list[dict]) -> None:
         """
@@ -372,6 +381,15 @@ class ContextObject:
         other = self.from_context(context)
         self.context_list = other.context_list
         self.prompt = other.prompt
+
+    @property
+    def total_length(self) -> int:
+        """
+        获取上下文总长度
+        
+        :return: 上下文总长度
+        """
+        return sum([len(content) for content in self.context_list]) + (len(self.prompt) if self.prompt else 0)
 
     @property
     def context(self) -> list[dict]:

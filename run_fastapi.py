@@ -32,7 +32,8 @@ from loguru import logger
 # ==== 自定义库 ==== #
 from core import (
     Core,
-    ApiInfo
+    ApiInfo,
+    Context
 )
 from core.CallLog import CallAPILog
 from Markdown import markdown_to_image
@@ -215,6 +216,20 @@ async def get_context(user_id: str):
     """
     context = await chat.context_manager.load(user_id, [])
     return JSONResponse(context)
+
+@app.get("/userdata/context/length/{user_id}")
+async def get_context(user_id: str):
+    """
+    Endpoint for getting context
+    """
+    context = await chat.context_manager.load(user_id, [])
+    context = Context.ContextObject().from_context(context)
+    return JSONResponse(
+        {
+            "total_context_length": context.total_length,
+            "context_length": len(context)
+        }
+    )
 @app.get("/userdata/context/userlist")
 async def get_context_userlist():
     """
@@ -320,7 +335,7 @@ async def change_config(user_id: str):
     """
     Endpoint for changing config
     """
-    config = await chat.user_config_manager.load(user_id=user_id, default={})
+    config = await chat.get_config(user_id = user_id)
     return JSONResponse(config)
 
 @app.put("/userdata/config/set/{user_id}/{value_type}")

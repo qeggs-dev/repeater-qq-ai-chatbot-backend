@@ -95,7 +95,6 @@ class Core:
         user_id: str,
         user_name: str = "",
         model_type: str = "",
-        print_chunk: bool = True,
         config: dict = {}
     ) -> PromptVP:
         return await self.promptvariable.get_prompt_variable(
@@ -108,7 +107,6 @@ class Core:
             ),
             model_type = model_type,
             botname = env.str("BOT_NAME", "Bot"),
-            print_chunk = str(print_chunk),
             birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
             zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
             time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z'),
@@ -140,6 +138,65 @@ class Core:
         return user_name
     # endregion
 
+    # region > get config
+    async def get_config(self, user_id: str, default: dict = {}) -> dict:
+        config = await self.user_config_manager.load(user_id=user_id)
+        if not config or not isinstance(config, dict):
+            config = default
+        return config
+    # endregion
+
+    # region > get context
+    async def get_context_loader(
+        self,
+        user_id: str,
+        user_name: str,
+        model_type: str = env.str("DEFAULT_MODEL_TYPE", "chat"),
+        user_config: dict = {},
+
+    ) -> ContextLoader:
+        context_loader = ContextLoader(
+            config=self.user_config_manager,
+            prompt=self.prompt_manager,
+            context=self.context_manager,
+            prompt_vp = await self.get_prompt_vp(
+                user_id = user_id,
+                user_name = user_name,
+                model_type = model_type,
+                config = user_config
+            )
+        )
+        return context_loader
+    async def get_context(
+        self,
+        context_loader: ContextLoader,
+        user_id: str,
+        message: str,
+        user_name: str,
+        role: str = 'user',
+        role_name: str | None = None,
+        load_prompt: bool = True,
+        continue_completion: bool = False,
+        reference_context_id: str | None = None
+    ) -> ContextObject:
+        if reference_context_id:
+            context = await context_loader.load(
+                user_id = reference_context_id,
+                message = message,
+                role = role,
+                roleName = role_name if role_name else user_name,
+                load_prompt = load_prompt,
+                continue_completion = continue_completion
+            )
+        else:
+            context = await context_loader.load(
+                user_id = user_id,
+                message = message,
+                role = role,
+                load_prompt = load_prompt,
+                continue_completion = continue_completion
+            )
+        return context
     # region > Chat
     async def Chat(
         self,
@@ -164,43 +221,29 @@ class Core:
 
             user_name = await self.load_nickname_mapping(user_id, user_name)
 
-            config = await self.user_config_manager.load(user_id=user_id)
-            if not config or not isinstance(config, dict):
-                config = {}
+            config = await self.get_config(user_id)
             
             if not model_type:
                 model_type = config.get("model_type", env.str("DEFAULT_MODEL_TYPE", "chat"))
 
-            context_loader = ContextLoader(
-                config=self.user_config_manager,
-                prompt=self.prompt_manager,
-                context=self.context_manager,
-                prompt_vp = await self.get_prompt_vp(
-                    user_id = user_id,
-                    user_name = user_name,
-                    model_type = model_type,
-                    print_chunk = print_chunk,
-                    config = config
-                )
+            context_loader = await self.get_context_loader(
+                user_id = user_id,
+                user_name = user_name,
+                model_type = model_type,
+                user_config = config
             )
 
-            if reference_context_id:
-                context = await context_loader.load(
-                    user_id = reference_context_id,
-                    message = message,
-                    role = role,
-                    roleName = role_name if role_name else user_name,
-                    load_prompt = load_prompt,
-                    continue_completion = continue_completion
-                )
-            else:
-                context = await context_loader.load(
-                    user_id = user_id,
-                    message = message,
-                    role = role,
-                    load_prompt = load_prompt,
-                    continue_completion = continue_completion
-                )
+            context = await self.get_context(
+                context_loader = context_loader,
+                user_id = user_id,
+                message = message,
+                user_name = user_name,
+                role = role,
+                role_name = role_name,
+                load_prompt = load_prompt,
+                continue_completion = continue_completion,
+                reference_context_id = reference_context_id
+            )
             
             request = Request()
             request.context = context
@@ -243,7 +286,6 @@ class Core:
                 user_id = user_id,
                 user_name = user_name,
                 model_type = model_type,
-                print_chunk = print_chunk,
                 config = config
             )
             response.context.last_content.content = prompt_vp.process(response.context.last_content.content)

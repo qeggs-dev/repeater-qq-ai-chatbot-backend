@@ -1,5 +1,6 @@
 # ==== 标准库 ==== #
 import os
+import argparse
 import asyncio
 from uuid import uuid4
 from typing import Any
@@ -10,7 +11,6 @@ import json
 # ==== 第三方库 ==== #
 import orjson
 from environs import Env
-from dotenv import load_dotenv
 from fastapi import (
     FastAPI,
     Request,
@@ -34,12 +34,23 @@ from core import (
     Core,
     ApiInfo
 )
+from core.CallLog import CallAPILog
 from Markdown import markdown_to_image
 from Markdown import STYLES as MARKDOWN_STYLES
 
 app = FastAPI(title="RepeaterChatBackend")
 env = Env()
-load_dotenv()
+parser = argparse.ArgumentParser(description='RepeaterChatBackend')
+parser.add_argument(
+    '--debug', '-d',
+    action='store_const',
+    const="./debug.env",  # 如果指定 --debug，则使用 debug.env
+    default="./run.env",     # 否则默认 .env
+    help='enable debug mode (loads debug.env instead of .env)'
+)
+args = parser.parse_args()
+
+env.read_env(args.debug)
 
 chat = Core()
 
@@ -73,7 +84,10 @@ async def root():
 # region Readme
 @app.get("/readme.md")
 async def readme():
-    return FileResponse(env.path("README_FILE_PATH"))
+    readme_path = env.path("README_FILE_PATH", "README.md")
+    if not readme_path.exists():
+        raise HTTPException(status_code=404, detail="README.md not found")
+    return FileResponse(readme_path, media_type="text/markdown")
 # endregion
 
 # region static

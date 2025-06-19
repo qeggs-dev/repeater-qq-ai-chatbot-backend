@@ -7,6 +7,7 @@ from typing import (
     Coroutine,
 )
 import random
+from pathlib import Path
 
 # ==== 第三方库 ==== #
 from environs import Env
@@ -52,7 +53,7 @@ from TimeParser import (
 # ==== 本模块代码 ==== #
 env = Env()
 
-__version__ = '4.0.0.0 Beta'
+__version__ = env.str("VERSION", "4.0.1.0 Beta")
 
 class Core:
     def __init__(self, max_concurrency: int | None = None):
@@ -103,12 +104,10 @@ class Core:
             BirthdayCountdown = lambda **kw: get_birthday_countdown(
                 env.int("BIRTHDAY_MONTH"),
                 env.int("BIRTHDAY_DAY"),
-                name=env.str(
-                    "BOT_NAME",
-                    default = ""
-                )
+                name=env.str("BOT_NAME","Bot")
             ),
             model_type = model_type,
+            botname = env.str("BOT_NAME", "Bot"),
             print_chunk = str(print_chunk),
             birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
             zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
@@ -122,6 +121,9 @@ class Core:
     
     # region > load nickname mapping
     async def load_nickname_mapping(self, user_id: str, user_name: str) -> str:
+        unm_path = env.path('USER_NICKNAME_MAPPING_FILE_PATH', Path())
+        if not unm_path.exists():
+            return user_name
         async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
             fdata = await f.read()
             try:
@@ -219,12 +221,14 @@ class Core:
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
             request.user_name = user_name
-            request.temperature = config.get("temperature", env.float("DEFAULT_TEMPERATURE", default=0.8))
+            request.temperature = config.get("temperature", env.float("DEFAULT_TEMPERATURE", default=None))
+            request.top_p = config.get("top_p", env.float("DEFAULT_TOP_P", default=None))
             request.max_tokens = config.get("max_tokens", env.int("DEFAULT_MAX_TOKENS", default=None))
             request.max_completion_tokens = config.get("max_completion_tokens", env.int("DEFAULT_MAX_COMPLETION_TOKENS", default=None))
             request.stop = config.get("stop", None)
-            request.frequency_penalty = config.get("frequency_penalty", env.float("DEFAULT_FREQUENCY_PENALTY", default=0.0))
-            request.presence_penalty = config.get("presence_penalty", env.float("DEFAULT_PRESENCE_PENALTY", default=0.0))
+            request.stream = env.bool("STREAM", True)
+            request.frequency_penalty = config.get("frequency_penalty", env.float("DEFAULT_FREQUENCY_PENALTY", default=None))
+            request.presence_penalty = config.get("presence_penalty", env.float("DEFAULT_PRESENCE_PENALTY", default=None))
             request.print_chunk = print_chunk
 
             call_prepare_end_time = time.time_ns()

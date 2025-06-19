@@ -62,13 +62,19 @@ class ContextLoader:
                 if not isinstance(config, dict):
                     config = {}
 
-                parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME"))
+                parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME", "default"))
 
                 default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
                 if default_prompt_file.exists():
                     logger.info(f"Load Default Prompt File: {default_prompt_file}", user_id = user_id)
                     async with aiofiles.open(default_prompt_file, mode="r", encoding="utf-8") as f:
                         prompt = await f.read()
+                else:
+                    logger.warning(f"Default Prompt File Not Found: {default_prompt_file}", user_id = user_id)
+                    prompt = ""
+            else:
+                logger.warning(f"Default Prompt Directory Not Found: {default_prompt_dir}", user_id = user_id)
+                prompt = ""
         # 展开变量
         prompt = await self._expand_variables(prompt, variables = self.prompt_vp, user_id=user_id)
 

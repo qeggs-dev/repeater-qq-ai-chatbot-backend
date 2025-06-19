@@ -5,12 +5,12 @@ import copy
 from loguru import logger
 from pathlib import Path
 from typing import List, AsyncIterator
-from .CallLogObject import CallLogObject
+from .CallLogObject import CallLogObject, CallAPILogObject
 
 
 class CallLogManager:
     def __init__(self, log_file: Path, max_log_length: int = 1000):
-        self.log_list: List[CallLogObject] = []
+        self.log_list: List[CallLogObject | CallAPILogObject] = []
         self.max_log_length = max_log_length
         self.log_file = log_file
         self.async_lock = asyncio.Lock()
@@ -18,7 +18,7 @@ class CallLogManager:
         # 确保日志目录存在
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
-    async def add_call_log(self, call_log: CallLogObject) -> None:
+    async def add_call_log(self, call_log: CallLogObject | CallAPILogObject) -> None:
         async with self.async_lock:
             self.log_list.append(call_log)
             logger.info("Call log added", user_id=call_log.user_id)

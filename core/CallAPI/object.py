@@ -68,12 +68,16 @@ class Request:
     model: str = ""
     user_name: str = ""
     temperature: float = 1.0
+    top_p: float = 1.0
     presence_penalty: float = 0.0
     frequency_penalty: float = 0.0
     max_tokens: int = 0
     max_completion_tokens: int = 0
+    stream: bool = False
     stop: list[str] | None = None
     context: ContextObject | None = None
+    logprobs: bool = False
+    top_logprobs: int | None = None
     print_chunk: bool = True
     continue_processing_callback_function: Callable[[str, Delta], bool] | None = None
 
@@ -87,9 +91,13 @@ class Response:
     created: int = 0
     model: str = ""
     token_usage: TokensCount | None = None
+    stream: bool = False
 
     stream_processing_start_time_ns:int = 0
     stream_processing_end_time_ns:int = 0
     chunk_times: list[int] = field(default_factory=list)
+    finish_reason: str = ""
+    system_fingerprint: str = ""
+    logprobs: list[Logprob] | None = None
     calling_log: CallLog | None = None
 

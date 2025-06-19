@@ -1,5 +1,8 @@
 from dataclasses import dataclass, field, asdict
 from typing import Any
+from environs import Env
+
+env = Env()
 
 @dataclass
 class CallLogObject:
@@ -11,6 +14,7 @@ class CallLogObject:
     model: str = ""
     user_id: str = ""
     user_name: str = ""
+    stream: bool = env.bool("STREAM", True)
 
     total_chunk: int = 0
     empty_chunk: int = 0
@@ -43,3 +47,29 @@ class CallLogObject:
     @classmethod
     def from_dict(cls, data: dict[str: Any]):
         return cls(**data)
+    
+    def update(self, data: dict[str: Any]):
+        for key, value in data.items():
+            setattr(self, key, value)
+    
+@dataclass
+class CallAPILogObject:
+    """
+    Class to represent a call API log object.
+    """
+    source: str = ""
+    start_time: int = 0
+    end_time: int = 0
+    user_id: str = ""
+
+    @property
+    def as_dict(self):
+        return asdict(self)
+    
+    @classmethod
+    def from_dict(cls, data: dict[str: Any]):
+        return cls(**data)
+    
+    def update(self, data: dict[str: Any]):
+        for key, value in data.items():
+            setattr(self, key, value)

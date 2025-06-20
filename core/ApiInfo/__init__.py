@@ -1,3 +1,3 @@
-from .apiinfo import ApiInfo
-from .apigroup import ApiGroup
-from .exceptions import *
+from ._apiinfo import ApiInfo
+from ._apigroup import ApiGroup
+from ._exceptions import *

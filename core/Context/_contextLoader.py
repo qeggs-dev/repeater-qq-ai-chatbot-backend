@@ -20,12 +20,12 @@ from ..DataManager import (
     ContextManager,
     UserConfigManager
 )
-from .object import (
+from ._object import (
     ContextObject,
     ContentUnit,
     ContextRole
 )
-from .exceptions import *
+from ._exceptions import *
 from TextProcessors import (
     PromptVP,
     limit_blank_lines,

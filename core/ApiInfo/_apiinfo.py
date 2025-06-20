@@ -4,7 +4,7 @@ import orjson
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from .apigroup import ApiGroup
+from ._apigroup import ApiGroup
 from .exceptions import *
 
 class ApiInfo:

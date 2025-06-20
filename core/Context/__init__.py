@@ -1,5 +1,5 @@
-from .object import ContextObject, ContentUnit, ContextRole
-from .object import (
+from ._object import ContextObject, ContentUnit, ContextRole
+from ._object import (
     FunctionResponseUnit,
     CallingFunction,
     FunctionParameters,
@@ -7,5 +7,5 @@ from .object import (
     CallingFunctionResponse
 )
 
-from .contextLoader import ContextLoader
-from .load_prompt_variable import LoadPromptVariable
+from ._contextLoader import ContextLoader
+from ._load_prompt_variable import LoadPromptVariable

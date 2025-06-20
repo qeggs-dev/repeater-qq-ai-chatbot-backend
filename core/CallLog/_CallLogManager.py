@@ -5,7 +5,7 @@ import copy
 from loguru import logger
 from pathlib import Path
 from typing import List, AsyncIterator
-from .CallLogObject import CallLogObject, CallAPILogObject
+from ._CallLogObject import CallLogObject, CallAPILogObject
 
 
 class CallLogManager:

@@ -1,4 +1,4 @@
-from .MainDataManager import (
+from ._MainDataManager import (
     ContextManager,
     PromptManager,
     UserConfigManager,

@@ -2,7 +2,7 @@ from dataclasses import dataclass, field, fields, replace
 import orjson
 from enum import Enum
 from typing import Any
-from .exceptions import *
+from ._exceptions import *
 
 @dataclass
 class FunctionParameters:

@@ -1,4 +1,4 @@
 from .PromptVariableProcessor import PromptVP
 from .PromptVariableProcessor import exception as PromptPV_Exception
-from .limitBlankLines import limit_blank_lines
-from .adjustIndentation import adjust_indentation
+from ._limitBlankLines import limit_blank_lines
+from ._adjustIndentation import adjust_indentation

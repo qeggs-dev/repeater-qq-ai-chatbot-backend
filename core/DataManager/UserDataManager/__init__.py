@@ -1,1 +1,1 @@
-from .MainManager import MainManager
+from ._MainManager import MainManager

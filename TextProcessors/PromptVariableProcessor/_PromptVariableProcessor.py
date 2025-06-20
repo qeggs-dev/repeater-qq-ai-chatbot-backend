@@ -1,7 +1,7 @@
 import re
 import types
 import shlex
-from .Exceptions import *
+from ._exceptions import *
 
 class PromptVP:
     '''

@@ -1,3 +1,3 @@
-from .CallLogManager import CallLogManager
-from .CallLogObject import CallLogObject as CallLog
-from .CallLogObject import CallAPILogObject as CallAPILog
+from ._CallLogManager import CallLogManager
+from ._CallLogObject import CallLogObject as CallLog
+from ._CallLogObject import CallAPILogObject as CallAPILog

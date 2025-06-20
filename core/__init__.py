@@ -1,4 +1,4 @@
-from .core import Core
+from ._core import Core
 from .DataManager import (
     ContextManager,
     UserConfigManager,

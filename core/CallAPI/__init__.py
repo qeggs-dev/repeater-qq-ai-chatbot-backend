@@ -1,5 +1,5 @@
-from .client import Client
-from .object import (
+from ._client import Client
+from ._object import (
     Request,
     TokensCount,
     Response,

@@ -1,2 +1,2 @@
-from .SubManager import SubManager
-from .JsonlSubManager import JsonlSubManager
+from ._SubManager import SubManager
+from ._JsonlSubManager import JsonlSubManager

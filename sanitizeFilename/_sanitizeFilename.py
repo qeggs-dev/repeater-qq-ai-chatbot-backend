@@ -1,7 +1,7 @@
 import asyncio
 import hashlib
 import os
-from .charset import DEFAULT_INVALID_CHARS
+from ._charset import DEFAULT_INVALID_CHARS
 
 def sanitize_filename(
     filename: str,

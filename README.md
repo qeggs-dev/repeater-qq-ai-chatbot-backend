@@ -107,6 +107,7 @@
  - uvicorn
  - markdown
  - imgkit
+ - httpx
 
 ---
 

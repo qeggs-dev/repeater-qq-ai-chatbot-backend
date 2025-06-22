@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 from ._apigroup import ApiGroup
-from .exceptions import *
+from ._exceptions import *
 
 class ApiInfo:
     def __init__(self, CaseSensitive: bool = False):

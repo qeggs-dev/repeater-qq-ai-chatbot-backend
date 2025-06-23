@@ -34,7 +34,7 @@ class ApiInfo:
     def _add_api_group(self, api_group: ApiGroup) -> None:
         """Add an ApiGroup to all relevant indexes."""
         self._api_groups.append(api_group)
-        
+            
         # Update type index
         if self.CaseSensitive:
             self._api_types.setdefault(api_group.model_type, []).append(api_group)

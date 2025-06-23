@@ -200,7 +200,6 @@ async def expand_variables(user_id: str, username: str = Form(...), text: str = 
         user_id = user_id,
         user_name = username,
         model_type = "nomodel",
-        print_chunk = True,
         config = config
     )
     output = prompt_vp.process(text)

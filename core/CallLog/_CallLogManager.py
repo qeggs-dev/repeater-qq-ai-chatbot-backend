@@ -2,18 +2,23 @@ import asyncio
 import aiofiles
 import orjson
 import copy
+from environs import Env
 from loguru import logger
 from pathlib import Path
 from typing import List, AsyncIterator
 from ._CallLogObject import CallLogObject, CallAPILogObject
 
+_env = Env()
 
 class CallLogManager:
-    def __init__(self, log_file: Path, max_log_length: int = 1000):
+    def __init__(self, log_file: Path, debonce_save_wait_time: int | None = None):
         self.log_list: List[CallLogObject | CallAPILogObject] = []
-        self.max_log_length = max_log_length
+        if debonce_save_wait_time is None:
+            debonce_save_wait_time = _env.float("CALLLOG_DEBONCE_SAVE_WAIT_TIME", 60)
+        self.debonce_save_wait_time = debonce_save_wait_time
         self.log_file = log_file
         self.async_lock = asyncio.Lock()
+        self._debonce_task: asyncio.Task | None = None
         
         # 确保日志目录存在
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
@@ -22,8 +27,12 @@ class CallLogManager:
         async with self.async_lock:
             self.log_list.append(call_log)
             logger.info("Call log added", user_id=call_log.user_id)
-            if len(self.log_list) > self.max_log_length:
-                await self._save_call_log()
+            
+            # 防抖保存操作
+            if self._debonce_task and not self._debonce_task.done():
+                self._debonce_task.cancel()  # 如果已有任务，先取消
+            self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = self.debonce_save_wait_time))  # 重新创建
+            logger.info("Call log debonce task created", user_id="[System]")
 
     def _save_call_log(self) -> None:
         """保存队列中的所有日志到文件"""
@@ -88,7 +97,7 @@ class CallLogManager:
                 async for line in f:
                     data = await asyncio.to_thread(orjson.loads, line)
                     yield CallLogObject.from_dict(data)  # 生成文件日志
-                    file_log_count += 1  # 正确计数
+                    file_log_count += 1  # 计数
         
         # 生成内存日志
         for log in mem_logs:
@@ -107,3 +116,11 @@ class CallLogManager:
         """手动保存日志到文件"""
         async with self.async_lock:
             await self._save_call_log_async()
+
+    async def _wait_and_save_async(self, wait_time: float = 5) -> None:
+        """等待并保存日志到文件"""
+        try:
+            await asyncio.sleep(wait_time)
+            await self._save_call_log_async()
+        except asyncio.CancelledError:
+            logger.info("Call log save task cancelled", user_id="[System]")

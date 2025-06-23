@@ -10,11 +10,21 @@ class EnvManager:
 
     :param check_after_definition: 是否在定义环境变量后立即检查
     """
-    def __init__(self, check_after_definition: bool = True):
+    def __init__(self, check_after_definition: bool = True, show_log: bool = True):
         self._env = environs.Env()
         self._required:dict[str, EnvObject] = {}
         self._optional:dict[str, EnvObject] = {}
         self.check_after_definition = check_after_definition
+
+        if show_log:
+            import traceback
+            from loguru import logger
+
+            self.logger = logger
+            self.traceback = traceback
+        else:
+            self.logger = None
+            self.traceback = None
 
     def load_env(self, env_file):
         """加载环境变量文件"""
@@ -53,15 +63,28 @@ class EnvManager:
         except KeyError as e:
             raise UnintelligibleBatchFormat(f"Missing key in batch format: {e}")
         
+    def _get_the_parent_function_name(self) -> str:
+        """获取调用父调用函数名"""
+        if self.traceback:
+            # 获取调用栈
+            stack = self.traceback.extract_stack()
+            # 倒数第二个元素是调用者的信息
+            caller_name = stack[-3].name
+            return caller_name
+        
     
     def get(self, key: str, default: Any = None) -> EnvObject:
         """获取环境变量"""
         if key in self._required and key in self._env:
+            if self.logger:
+                self.logger.debug(f"Get Env \"{key}\" for {self._get_the_parent_function_name()}()")
             return self._required[key]
         elif key in self._optional:
             env = self._optional[key]
             if default is not None:
                 env.default = default
+            if self.logger:
+                self.logger.debug(f"Get Env \"{key}\" for {self._get_the_parent_function_name()}()")
             return env
         else:
             raise EnvNotFoundError(f"Key {key} is not defined in the environment manager")

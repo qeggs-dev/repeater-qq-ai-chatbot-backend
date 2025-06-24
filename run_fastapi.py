@@ -55,31 +55,31 @@ env.read_env(args.debug)
 
 chat = Core()
 
-# region Web
-@app.get("/")
-@app.get("/web")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "index.html")
-
-@app.get("/web/calllog")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "calllog.html")
-
-@app.get("/web/admin")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "admin" / "index.html")
-
-@app.get("/web/admin/chat")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "admin" / "chat.html")
-
-@app.get("/web/admin/prompt")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "admin" / "prompt.html")
-
-@app.get("/web/admin/config")
-async def root():
-    return FileResponse(env.path("WEB_PATH") / "admin" / "config.html")
+# region Web(已废弃)
+# @app.get("/")
+# @app.get("/web")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "index.html")
+# 
+# @app.get("/web/calllog")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "calllog.html")
+# 
+# @app.get("/web/admin")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "admin" / "index.html")
+# 
+# @app.get("/web/admin/chat")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "admin" / "chat.html")
+# 
+# @app.get("/web/admin/prompt")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "admin" / "prompt.html")
+# 
+# @app.get("/web/admin/config")
+# async def root():
+#     return FileResponse(env.path("WEB_PATH") / "admin" / "config.html")
 # endregion
 
 # region Readme

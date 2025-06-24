@@ -11,11 +11,14 @@ from ._CallLogObject import CallLogObject, CallAPILogObject
 _env = Env()
 
 class CallLogManager:
-    def __init__(self, log_file: Path, debonce_save_wait_time: int | None = None):
+    def __init__(self, log_file: Path, debonce_save_wait_time: int | None = None, max_cache_size: int | None = None):
         self.log_list: List[CallLogObject | CallAPILogObject] = []
         if debonce_save_wait_time is None:
             debonce_save_wait_time = _env.float("CALLLOG_DEBONCE_SAVE_WAIT_TIME", 60)
         self.debonce_save_wait_time = debonce_save_wait_time
+        if max_cache_size is None:
+            max_cache_size = _env.int("CALLLOG_MAX_CACHE_SIZE", 1000)
+        self.max_cache_size = max_cache_size
         self.log_file = log_file
         self.async_lock = asyncio.Lock()
         self._debonce_task: asyncio.Task | None = None
@@ -31,7 +34,10 @@ class CallLogManager:
             # 防抖保存操作
             if self._debonce_task and not self._debonce_task.done():
                 self._debonce_task.cancel()  # 如果已有任务，先取消
-            self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = self.debonce_save_wait_time))  # 重新创建
+            if len(self.log_list) >= self.max_cache_size:
+                self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = self.debonce_save_wait_time))  # 重新创建
+            else:
+                self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = 0)) # 直接保存
             logger.info("Call log debonce task created", user_id="[System]")
 
     def _save_call_log(self) -> None:

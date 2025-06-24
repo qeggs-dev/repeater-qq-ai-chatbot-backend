@@ -1,19 +1,42 @@
 #!/bin/bash
 
-# 检查是否安装了 Python 3
+# Check if Python 3 is installed
 if ! command -v python3 &> /dev/null; then
-    echo "Python 3 未安装，请先安装 Python 3。"
+    echo "ERROR: Python 3 is not installed. Please install Python 3 before proceeding." >&2
     exit 1
 fi
 
-# 创建虚拟环境
-echo "创建虚拟环境..."
+# Create virtual environment
+echo "Creating virtual environment..."
 python3 -m venv .venv
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to create virtual environment." >&2
+    exit 1
+fi
 
-# 激活虚拟环境并安装依赖
-echo "激活虚拟环境并安装依赖..."
+# Activate virtual environment
+echo "Activating virtual environment..."
 source .venv/bin/activate
-pip install -r requirements.txt
+if [ $? -ne 0 ]; then
+    echo "ERROR: Failed to activate virtual environment." >&2
+    exit 1
+fi
 
-echo "环境配置完成！运行以下命令启动："
-echo "./run.sh"
+# Check for requirements file
+if [ ! -f "requirements.txt" ]; then
+    echo "WARNING: requirements.txt not found. No dependencies will be installed." >&2
+else
+    # Install dependencies
+    echo "Installing dependencies from requirements.txt..."
+    pip install -q --upgrade pip
+    pip install -r requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "ERROR: Failed to install dependencies." >&2
+        exit 1
+    fi
+fi
+
+echo -e "\nEnvironment setup completed successfully!"
+echo "To start the application:"
+echo "  1. Activate the virtual environment: source .venv/bin/activate"
+echo "  2. Run the application: ./run.sh"

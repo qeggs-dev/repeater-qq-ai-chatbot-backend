@@ -161,10 +161,17 @@ async def chat_endpoint(
             async def _delete(filename: str):
                 await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
                 logger.info(f'Deleted image {filename}', user_id=user_id)
-            try:
-                await asyncio.sleep(sleep_time)
-            finally:
-                await _delete(filename)
+
+                # 保证不调用第二次
+                delete_attempted = False
+                try:
+                    await asyncio.sleep(sleep_time)
+                except asyncio.CancelledError:
+                    await _delete(filename)
+                    delete_attempted = True
+                finally:
+                    if not delete_attempted:
+                        await _delete(filename)
         
         config:dict = await chat.user_config_manager.load(user_id, default={})
         default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")

@@ -1,11 +1,12 @@
 # @复读机Repeater
 **- Only Chat, Focus Chat. -**
 一个基于[`NoneBot`](https://nonebot.dev/)和[`OpenAI SDK`](https://pypi.org/project/openai/)开发的**实验性**QQ聊天机器人
+**此仓库仅为后端实现，NoneBot插件暂未上线**
 将原始会话数据的处理直接公开给用户使用
 灵活性较高，只需要与账号取得联系即可开箱使用
 (私聊请注意先加好友，临时消息可能会失败)
 
-与其他QQ机器人相比，复读机具有以下特点：
+与其他QQ机器人相比，复读机具有以下特点：repeater-qq-ai-chatbot-backend
 
  - 平行数据管理：支持平行数据管理，用户可以随意切换平行数据，而不需要担心数据丢失。
  - 多模型支持：支持OpenAI接口的模型即可调用，可以根据需要选择不同的模型进行对话。
@@ -131,6 +132,7 @@ This project is licensed under the [MIT License](LICENSE).
 #### 3. 运行项目
 
 > `run.bat`（Windows）或`source run.sh`（Linux）
+
 ---
 
 ## 环境变量表
@@ -206,6 +208,7 @@ This project is licensed under the [MIT License](LICENSE).
 ## 变量表
 
 | 变量 | 描述 | 参数 |
+| :---: | :---: | :---: |
 | `user_id` | 用户ID | 无 |
 | `user_name` | 用户名 | 无 |
 | `BirthdayCountdown` | 复读机生日倒计时 | 无 |
@@ -220,7 +223,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-## 命令表
+## 命令表(命令代码在NoneBot插件中)
 
 | 命令                       | 别名    | 全名                      | 类型        | 功能描述                       | 参数描述                                   | 版本      | 命令版本 | 备注 |
 | :---:                      | :---:  | :---:                     | :---:       | :---:                         | :---:                                     | :---:    | :---:    | :---: |

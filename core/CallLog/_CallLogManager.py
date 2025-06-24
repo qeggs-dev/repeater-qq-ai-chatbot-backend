@@ -110,11 +110,17 @@ class CallLogManager:
     
     def save_call_log(self) -> None:
         """手动保存日志到文件"""
+        # 停止防抖任务
+        if self._debonce_task and not self._debonce_task.done():
+            self._debonce_task.cancel()  # 如果已有任务，先取消
         self._save_call_log()
     
     async def save_call_log_async(self) -> None:
         """手动保存日志到文件"""
         async with self.async_lock:
+            # 停止防抖任务
+            if self._debonce_task and not self._debonce_task.done():
+                self._debonce_task.cancel()  # 如果已有任务，先取消
             await self._save_call_log_async()
 
     async def _wait_and_save_async(self, wait_time: float = 5) -> None:

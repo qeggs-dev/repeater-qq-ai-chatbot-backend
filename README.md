@@ -157,6 +157,7 @@
 | `DEFAULT_MAX_TOKENS` | 默认模型最大输出token<br/>(部分API不支持 `DEFAULT_MAX_COMPLETION_TOKENS`设置 提供此项以兼容) | *选填* | `1024` |
 | `DEFAULT_MAX_COMPLETION_TOKENS` | 默认模型最大生成token | *选填* | `1024` |
 | `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `60` |
+| `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
 | `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | `chat` |
 | `WKHTMLTOPDF_PATH` | 渲染图片依赖的`Wkhtmltopdf`的位置 | **必填** | |
 | `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | `150` |

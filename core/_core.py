@@ -53,7 +53,7 @@ from TimeParser import (
 # ==== 本模块代码 ==== #
 env = Env()
 
-__version__ = env.str("VERSION", "4.0.1.0 Beta")
+__version__ = env.str("VERSION", "4.0.2.0 Beta")
 
 class Core:
     def __init__(self, max_concurrency: int | None = None):

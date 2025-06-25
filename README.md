@@ -120,10 +120,10 @@ This project is licensed under the [MIT License](LICENSE).
 #### 1. 初始化虚拟环境
 
 > python -m venv venv
-> venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
+> `venv\Scripts\activate`（Windows）或`bash venv/bin/activate`（Linux）
 > pip install -r requirements.txt
-> 或可以使用脚本安装
-> `setup.bat`（Windows）或`source setup.sh`（Linux）
+> 或可以使用脚本安装(由于CRLF的问题，可能需要`sudo apt install dos2unix`帮个小忙)
+> `setup.bat`（Windows）或`bash setup.sh`（Linux）
 
 #### 2. 创建环境变量文件
 
@@ -131,7 +131,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 #### 3. 运行项目
 
-> `run.bat`（Windows）或`source run.sh`（Linux）
+> `run.bat`（Windows）或`bash run.sh`（Linux）
 
 ---
 

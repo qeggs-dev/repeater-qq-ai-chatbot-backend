@@ -91,24 +91,24 @@ async def readme():
     return FileResponse(readme_path, media_type="text/markdown")
 # endregion
 
-# region static
-@app.get("/static/{path:path}")
-async def static(path: str):
-    """
-    Endpoint for serving static files
-    """
-    if not (env.path("STATIC_DIR") / f"{path}.png").exists():
-        raise HTTPException(detail="File not found", status_code=404)
-    return FileResponse(env.path("STATIC_DIR") / path)
-
-@app.get("/favicon.ico")
-async def favicon():
-    """
-    Endpoint for serving favicon
-    """
-    if not (env.path("STATIC_DIR") / "favicon.ico").exists():
-        raise HTTPException(detail="File not found", status_code=404)
-    return FileResponse(env.path("STATIC_DIR") / "favicon.ico")
+# region static(暂时停用)
+# @app.get("/static/{path:path}")
+# async def static(path: str):
+#     """
+#     Endpoint for serving static files
+#     """
+#     if not (env.path("STATIC_DIR") / f"{path}.png").exists():
+#         raise HTTPException(detail="File not found", status_code=404)
+#     return FileResponse(env.path("STATIC_DIR") / path)
+# 
+# @app.get("/favicon.ico")
+# async def favicon():
+#     """
+#     Endpoint for serving favicon
+#     """
+#     if not (env.path("STATIC_DIR") / "favicon.ico").exists():
+#         raise HTTPException(detail="File not found", status_code=404)
+#     return FileResponse(env.path("STATIC_DIR") / "favicon.ico")
 # endregion
 
 # region Chat

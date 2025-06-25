@@ -223,6 +223,37 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
+## 接口表
+
+| 请求 | URL | 参数(表单数据) | 描述 |
+| :---: | :---: | :---: | :---: |
+| `POST` | `/chat/completion/{user_id:str}` | `message(str)`<br/>`user_name(str)`<br/>`role(str) = 'user'`<br/>`role_name(str)`<br/>`model_type(str)`<br/>`load_prompt(bool) = true`<br/>`rendering(bool) = false`<br/>`save_context(bool) = true`<br/>`reference_context_id(str)`<br/>`continue_completion(bool)`  | AI聊天 |
+| `POST` | `/userdata/variable/expand/{user_id:str}` | `username(str)`<br/>`text(str)` | 变量解析 |
+| `GET` | `/userdata/context/get/{user_id:str}` | | 获取上下文 |
+| `GET` | `/userdata/context/length/{user_id:str}` | | 获取上下文长度 |
+| `GET` | `/userdata/context/userlist` | | 获取用户列表 |
+| `POST` | `/userdata/context/withdraw/{user_id:str}` | `index(int)` | 撤回上下文 |
+| `POST` | `/userdata/context/rewrite/{user_id:str}` | `index(int)`<br/>`content(str)`<br/>`reasoning_content(str)` | 重写上下文 |
+| `POST` | `/userdata/context/change/{user_id:str}` | `new_context_id(str)` | 切换上下文 |
+| `DELETE` | `/userdata/context/delete/{user_id:str}` | | 删除上下文 |
+| `GET` | `/userdata/prompt/get/{user_id:str}` | | 获取提示词 |
+| `POST` | `/userdata/prompt/set/{user_id:str}` | `prompt(str)` | 设置提示词 |
+| `GET` | `/userdata/prompt/userlist` | | 获取用户列表 |
+| `POST` | `/userdata/prompt/change/{user_id:str}` | `new_prompt_id(str)` | 切换提示词 |
+| `DELETE` | `/userdata/prompt/delete/{user_id:str}` | | 删除提示词 |
+| `GET` | `/userdata/config/get/{user_id:str}` | | 获取配置 |
+| `POST` | `/userdata/config/set/{user_id:str}/{value_type:str}` | `config(str)` | 设置配置 |
+| `POST` | `/userdata/config/delkey/{user_id:str}` | `key(str)` | 删除配置 |
+| `GET` | `/userdata/config/userlist` | | 获取用户列表 |
+| `POST` | `/userdata/config/change/{user_id:str}` | `new_user_id(str)` | 修改用户ID |
+| `DELETE` | `/userdata/config/delete/{user_id:str}` | | 删除用户配置文件 |
+| `GET` | `/userdata/file/{user_id:str}.zip` | | 获取用户数据 |
+| `GET` | `/calllog` | | 获取调用日志(不推荐) |
+| `GET` | `/calllog/stream` | | 流式获取调用日志(推荐) |
+| `GET` | `/file/render/{file_uuid:str}.png` | | 获取图片渲染输出文件 |
+
+---
+
 ## 命令表(命令代码在NoneBot插件中)
 
 | 命令                       | 别名    | 全名                      | 类型        | 功能描述                       | 参数描述                                   | 版本      | 命令版本 | 备注 |

@@ -34,7 +34,7 @@ class CallLogManager:
             # 防抖保存操作
             if self._debonce_task and not self._debonce_task.done():
                 self._debonce_task.cancel()  # 如果已有任务，先取消
-            if len(self.log_list) >= self.max_cache_size:
+            if len(self.log_list) < self.max_cache_size:
                 self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = self.debonce_save_wait_time))  # 重新创建
             else:
                 self._debonce_task = asyncio.create_task(self._wait_and_save_async(wait_time = 0)) # 直接保存

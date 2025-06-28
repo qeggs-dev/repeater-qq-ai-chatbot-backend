@@ -19,7 +19,7 @@
 
 ## 注意事项:
  - 本服务由一位 `16岁自学开发者` 使用AI协作开发，公益项目，如果你愿意捐赠，可以在机器人的**QQ空间**中找到赞赏码以支持项目运营(或是支持开发者)。
- - 初始服务仅作为实验项目运行，不保证服务稳定性。
+ - 初始服务仅作为实验项目运行，不保证服务稳定性（存在维修断电以及临时消息丢失的可能，但这与项目本身无关，只是我不懂运维），有需要可自行部署。
  - 项目随时可能会因为开发者个人原因，或API额度耗尽等因素而被迫中止。
  - 仅供学习和非商业用途。使用者需确认生成内容的合法性，并自行承担使用本服务可能产生的风险。
  - 如果你觉得这个Bot非常好用，请去看一下[`Deepseek`](https://www.deepseek.com/)他们的官网吧，这个Bot是基于他们的API开发的。
@@ -27,117 +27,133 @@
 ---
 
 ## License
-This project is licensed under the [MIT License](LICENSE).
+这个项目基于[MIT License](LICENSE)发布。
 
 ---
 
-## 主要依赖
-#### [`NoneBot`](https://nonebot.dev/)：一个基于Python的异步OneBot框架
-安装步骤(默认你已经安装了Python)：
+<details>
+    <summary>旧版部署教程(已废弃)</summary>
 
-> 1. 打开命令行终端，切换路径到你希望安装NoneBot的目录下
-> 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
-> 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
-
-部署步骤(默认你已经获取到了复读机的NoneBot插件)：
-
-> 1. 命令行输入pip install nb-cli，回车运行命令
-> 2. 再次输入nb create回车，创建一个项目
-> 3. 选择simple模板
-> 4. 给项目起个名字
-> 5. 建议使用FastAPI驱动器
-> 6. **至少必须选择OneBot V11适配器**
-> 7. 输入Yes安装默认依赖
-> 8. 输入Yes安装虚拟环境
-> 9. 如果需要，可以选择内置插件，如echo
-> 11. 在项目目录下，找到`.env`文件
-> 12. 填写HOST(x.x.x.x)和PORT(数字)，并保存
-> 13. 将复读机的NoneBot插件放入项目目录下（通常是`plugins`文件夹下）
-> 14. 部署完成后，运行nb run
-
-#### [`OpenAI SDK`](https://github.com/openai/openai-python)：一个基于Python的大模型对接SDK
-安装步骤(默认你已经安装了Python)：
-
-> 1. 打开命令行终端，切换路径到你希望安装OpenAI SDK的目录下
-> 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
-> 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
-> 4. 输入命令pip install openai，回车运行命令
-
-#### [`FastAPI`](https://fastapi.tiangolo.com/)：一个用于构建高性能、可扩展的API的Python框架
-安装步骤(默认你已经安装了Python)：
-
-> 1. 打开命令行终端，切换路径到你希望安装FastAPI的目录下
-> 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
-> 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
-> 4. 输入命令pip install fastapi，回车运行命令
-
-#### [`uvicorn`](https://www.uvicorn.org/)：一个基于ASGI的Python服务器，用于运行FastAPI应用
-安装步骤(默认你已经安装了Python)：
-
-> 1. 打开命令行终端，切换路径到你希望安装uvicorn的目录下
-> 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
-> 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
-> 4. 输入命令pip install uvicorn，回车运行命令
-
-#### [`NapCat`](https://napneko.github.io/guide/napcat): 一个用于处理QQ消息的OneBot适配器
-安装步骤(此处默认选择Shell版安装方式)
-
-> 1. 前往 NapCatQQ 的 release 页面 下载NapCat.Shell.zip解压
-> 2. 确保QQ版本安装且最新
-> 3. 双击目录下launcher.bat启动(如果是win10 则使用launcher-win10.bat)
-
-配置步骤：
-
-> 1. 启动后，扫码登陆NapCatQQ
-> 2. 访问WebUI(http://127.0.0.1:xxxx/webui/?token=napcat)
-> 3. 点击`网络配置`
-> 4. 点击`新建`，选择`WebSocket客户端`
-> 5. 打开`启用`，输入一个名称
-> 6. 输入NoneBot配置时填写的`HOST`和`PORT`(格式：ws://`HOST`:`PORT`/onebot/v11/ws)
-> 7. 输入token(如果你没改密码那么就填入`napcat`，否则需要填入你的密码)
-> 8. 点击`保存`，等待连接成功
+> ## 主要依赖
+> #### [`NoneBot`](https://nonebot.dev/)：一个基于Python的异步OneBot框架
+> 安装步骤(默认你已经安装了Python)：
+> 
+> > 1. 打开命令行终端，切换路径到你希望安装NoneBot的目录下
+> > 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
+> > 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
+> 
+> 部署步骤(默认你已经获取到了复读机的NoneBot插件)：
+> 
+> > 1. 命令行输入pip install nb-cli，回车运行命令
+> > 2. 再次输入nb create回车，创建一个项目
+> > 3. 选择simple模板
+> > 4. 给项目起个名字
+> > 5. 建议使用FastAPI驱动器
+> > 6. **至少必须选择OneBot V11适配器**
+> > 7. 输入Yes安装默认依赖
+> > 8. 输入Yes安装虚拟环境
+> > 9. 如果需要，可以选择内置插件，如echo
+> > 11. 在项目目录下，找到`.env`文件
+> > 12. 填写HOST(x.x.x.x)和PORT(数字)，并保存
+> > 13. 将复读机的NoneBot插件放入项目目录下（通常是`plugins`文件夹下）
+> > 14. 部署完成后，运行nb run
+> 
+> #### [`OpenAI SDK`](https://github.com/openai/openai-python)：一个基于Python的大模型对接SDK
+> 安装步骤(默认你已经安装了Python)：
+> 
+> > 1. 打开命令行终端，切换路径到你希望安装OpenAI SDK的目录下
+> > 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
+> > 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
+> > 4. 输入命令pip install openai，回车运行命令
+> 
+> #### [`FastAPI`](https://fastapi.tiangolo.com/)：一个用于构建高性能、可扩展的API的Python框架
+> 安装步骤(默认你已经安装了Python)：
+> 
+> > 1. 打开命令行终端，切换路径到你希望安装FastAPI的目录下
+> > 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
+> > 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
+> > 4. 输入命令pip install fastapi，回车运行命令
+> 
+> #### [`uvicorn`](https://www.uvicorn.org/)：一个基于ASGI的Python服务器，用于运行FastAPI应用
+> 安装步骤(默认你已经安装了Python)：
+> 
+> > 1. 打开命令行终端，切换路径到你希望安装uvicorn的目录下
+> > 2. 初始化虚拟环境(此处以venv为例，已经有虚拟环境的可以跳过此步骤)：python -m venv venv
+> > 3. 激活虚拟环境(如果已经激活可以跳过此步骤)：venv\Scripts\activate（Windows）或source venv/bin/activate（Linux）
+> > 4. 输入命令pip install uvicorn，回车运行命令
+> 
+> #### [`NapCat`](https://napneko.github.io/guide/napcat): 一个用于处理QQ消息的OneBot适配器
+> 安装步骤(此处默认选择Shell版安装方式)
+> 
+> > 1. 前往 NapCatQQ 的 release 页面 下载NapCat.Shell.zip解压
+> > 2. 确保QQ版本安装且最新
+> > 3. 双击目录下launcher.bat启动(如果是win10 则使用launcher-win10.bat)
+> 
+> 配置步骤：
+> 
+> > 1. 启动后，扫码登陆NapCatQQ
+> > 2. 访问WebUI(http://127.0.0.1:xxxx/webui/?token=napcat)
+> > 3. 点击`网络配置`
+> > 4. 点击`新建`，选择`WebSocket客户端`
+> > 5. 打开`启用`，输入一个名称
+> > 6. 输入NoneBot配置时填写的`HOST`和`PORT`(格式：ws://`HOST`:`PORT`/onebot/v11/ws)
+> > 7. 输入token(如果你没改密码那么就填入`napcat`，否则需要填入你的密码)
+> > 8. 点击`保存`，等待连接成功
+> 
+> ---
+> 
+> ## 次级依赖
+> 
+> *默认你已经完成主要依赖的安装*
+> 
+>  - aiofiles
+>  - environs
+>  - python-multipart
+>  - loguru
+>  - orjson
+>  - uvicorn
+>  - markdown
+>  - imgkit
+>  - httpx
+</details>
 
 ---
 
-## 次级依赖
+## 安装部署
 
-*默认你已经完成主要依赖的安装*
+**至少需要确保安装了Python3.10以上版本**
 
- - aiofiles
- - environs
- - python-multipart
- - loguru
- - orjson
- - uvicorn
- - markdown
- - imgkit
- - httpx
+### 1. 初始化环境
+> 将项目克隆到本地后，进入项目目录，执行以下操作：
+> ###### Windows:
+> 执行setup.bat
+> 
+> ###### Linux:
+> 执行下列命令
+> ```shell
+> bash setup.sh
+> ```
 
----
+### 2. 配置环境变量
+> 在项目目录下创建.env文件，参照[环境变量表](#环境变量表)填写相关配置
 
-## 后端安装部署
+### 3. 启动服务
+> ###### Windows:
+> 执行run.bat
+> 
+> ###### Linux:
+> 执行下列命令
+> ```shell
+> bash run.sh
+> ```
 
-#### 1. 初始化虚拟环境
 
-> python -m venv venv
-> `venv\Scripts\activate`（Windows）或`bash venv/bin/activate`（Linux）
-> pip install -r requirements.txt
-> 或可以使用脚本安装(由于CRLF的问题，可能需要`sudo apt install dos2unix`帮个小忙)
-> `setup.bat`（Windows）或`bash setup.sh`（Linux）
-
-#### 2. 创建环境变量文件
-
-> 具体环境变量请参考[环境变量表](#环境变量表)内容
-
-#### 3. 运行项目
-
-> `run.bat`（Windows）或`bash run.sh`（Linux）
 
 ---
 
 ## 环境变量表
 
-| 环境变量 | 描述 | 是否必填 | 默认值(推荐值) |
+| 环境变量 | 描述 | 是否必填 | 默认值(示例值) |
 | :---: | :---: | :---: | :---: |
 | `HOST` | 服务监听的IP | *选填* | 0.0.0.0 |
 | `PORT` | 服务监听端口 | *选填* | 8080 |
@@ -146,6 +162,7 @@ This project is licensed under the [MIT License](LICENSE).
 | `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | |
 | `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | `./config/apiconfig.json` |
 | `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | `./config/calllog.jsonl` |
+| `MAX_CONCURRENCY` | 最大并发数 | *选填* | 1000 |
 | `DEFAULT_PROMPT_DIR` | 默认提示词文件夹 | *选填* | `./PresetsPrompt` |
 | `PARSET_PROMPT_NAME` | 默认提示词文件名(不包括后缀) | *选填* | `default` |
 | `README_FILE_PATH` | README文件位置 | *选填* | `./README.md` |
@@ -166,10 +183,10 @@ This project is licensed under the [MIT License](LICENSE).
 | `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | `chat` |
 | `WKHTMLTOPDF_PATH` | 渲染图片依赖的`Wkhtmltopdf`的位置 | **必填** | |
 | `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | `150` |
-| `BOT_NAME` | 机器人名字 | **必填** |  |
-| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | `2024` |
-| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | `6` |
-| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | `28` |
+| `BOT_NAME` | 机器人名字 | **必填** | |
+| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | |
+| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | |
+| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | |
 
 ---
 
@@ -256,7 +273,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 命令表(命令代码在NoneBot插件中)
 
-| 命令                       | 别名    | 全名                      | 类型        | 功能描述                       | 参数描述                                   | 版本      | 命令版本 | 备注 |
+| 命令                       | 别名    | 全名                      | 类型        | 功能描述                       | 参数描述                                   | 加入版本 | 命令版本 | 备注 |
 | :---:                      | :---:  | :---:                     | :---:       | :---:                         | :---:                                     | :---:    | :---:    | :---: |
 | `chat`                     | `c`    | `Chat`                    | `CHAT`      | 与机器人对话                   | 自然语言输入                               | 4.0 Beta | 1.0      | 默认命令，可被`to_me`消息调起 |
 | `keepAnswering`            | `ka`   | `KeepAnswering`           | `CHAT`      | 持续对话(常规)                 | 无                                        | 4.0 Beta | 1.0      | 无须输入，AI再次回复 |

@@ -63,7 +63,7 @@ def sum_string_lengths(items, field_name):
 class Client:
     def __init__(self, max_concurrency: int | None = None):
         # 协程池
-        self.max_concurrency = max_concurrency if max_concurrency is not None else env.int('MAX_CONCURRENCY', 10) # 最大并发数
+        self.max_concurrency = max_concurrency if max_concurrency is not None else env.int('MAX_CONCURRENCY', 1000) # 最大并发数
         self.semaphore = asyncio.Semaphore(self.max_concurrency)
         self.tasks = set()  # 存储运行中的任务
     # region 协程池管理

@@ -1,6 +1,5 @@
 # ==== 标准库 ==== #
 import os
-import argparse
 import asyncio
 from uuid import uuid4
 from typing import Any
@@ -41,17 +40,8 @@ from Markdown import STYLES as MARKDOWN_STYLES
 
 app = FastAPI(title="RepeaterChatBackend")
 env = Env()
-parser = argparse.ArgumentParser(description='RepeaterChatBackend')
-parser.add_argument(
-    '--debug', '-d',
-    action='store_const',
-    const="./debug.env",  # 如果指定 --debug，则使用 debug.env
-    default="./run.env",     # 否则默认 .env
-    help='enable debug mode (loads debug.env instead of .env)'
-)
-args = parser.parse_args()
 
-env.read_env(args.debug)
+env.read_env()
 
 chat = Core()
 

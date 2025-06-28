@@ -6,7 +6,7 @@
 灵活性较高，只需要与账号取得联系即可开箱使用
 (私聊请注意先加好友，临时消息可能会失败)
 
-与其他QQ机器人相比，复读机具有以下特点：repeater-qq-ai-chatbot-backend
+与其他QQ机器人相比，复读机具有以下特点：
 
  - 平行数据管理：支持平行数据管理，用户可以随意切换平行数据，而不需要担心数据丢失。
  - 多模型支持：支持OpenAI接口的模型即可调用，可以根据需要选择不同的模型进行对话。
@@ -19,10 +19,10 @@
 
 ## 注意事项:
  - 本服务由一位 `16岁自学开发者` 使用AI协作开发，公益项目，如果你愿意捐赠，可以在机器人的**QQ空间**中找到赞赏码以支持项目运营(或是支持开发者)。
- - 初始服务仅作为实验项目运行，不保证服务稳定性（存在维修断电以及临时消息丢失的可能，但这与项目本身无关，只是我不懂运维），有需要可自行部署。
+ - 初始服务仅作为实验项目运行，不保证服务稳定性（存在维修断电以及临时消息丢失的可能，但这与项目本身无关，~~只是我不懂运维罢了~~），有需要可自行部署。
  - 项目随时可能会因为开发者个人原因，或API额度耗尽等因素而被迫中止。
  - 仅供学习和非商业用途。使用者需确认生成内容的合法性，并自行承担使用本服务可能产生的风险。
- - 如果你觉得这个Bot非常好用，请去看一下[`Deepseek`](https://www.deepseek.com/)他们的官网吧，这个Bot是基于他们的API开发的。
+ - 如果你觉得这个Bot非常好用，请去看一下[`Deepseek`](https://www.deepseek.com/)的官网吧，这个Bot最初就是基于他们的模型API开发的。
 
 ---
 
@@ -159,7 +159,7 @@
 | `PORT` | 服务监听端口 | *选填* | 8080 |
 | `SAVE_CALL_LOG` | 运行时是否记录主API的调用日志 | *选填* | True |
 | `VERSION` | 版本号 | *选填* | \*由代码自动生成 |
-| `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | |
+| `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | \*可从[Deepseek开放平台/API Keys](https://platform.deepseek.com/api_keys)页面获取 |
 | `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | `./config/apiconfig.json` |
 | `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | `./config/calllog.jsonl` |
 | `MAX_CONCURRENCY` | 最大并发数 | *选填* | 1000 |
@@ -181,7 +181,7 @@
 | `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `60` |
 | `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
 | `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | `chat` |
-| `WKHTMLTOPDF_PATH` | 渲染图片依赖的`Wkhtmltopdf`的位置 | **必填** | |
+| `WKHTMLTOPDF_PATH` | 渲染图片依赖的[`Wkhtmltopdf`](https://wkhtmltopdf.org/downloads.html)的位置 | **必填** | |
 | `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | `150` |
 | `BOT_NAME` | 机器人名字 | **必填** | |
 | `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | |

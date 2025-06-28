@@ -1,5 +1,8 @@
 # @复读机Repeater
 **- Only Chat, Focus Chat. -**
+
+*注：本仓库仅为后端实现，NoneBot插件部分暂未上线*
+
 一个基于[`NoneBot`](https://nonebot.dev/)和[`OpenAI SDK`](https://pypi.org/project/openai/)开发的**实验性**QQ聊天机器人
 **此仓库仅为后端实现，NoneBot插件暂未上线**
 将原始会话数据的处理直接公开给用户使用
@@ -147,30 +150,27 @@
 > bash run.sh
 > ```
 
-
-
 ---
 
 ## 环境变量表
 
-| 环境变量 | 描述 | 是否必填 | 默认值(示例值) |
+| 环境变量 | 描述 | 是否必填 | 默认值(*示例值*) |
 | :---: | :---: | :---: | :---: |
 | `HOST` | 服务监听的IP | *选填* | 0.0.0.0 |
 | `PORT` | 服务监听端口 | *选填* | 8080 |
 | `SAVE_CALL_LOG` | 运行时是否记录主API的调用日志 | *选填* | True |
 | `VERSION` | 版本号 | *选填* | \*由代码自动生成 |
-| `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | \*可从[Deepseek开放平台/API Keys](https://platform.deepseek.com/api_keys)页面获取 |
-| `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | `./config/apiconfig.json` |
-| `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | `./config/calllog.jsonl` |
+| `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | *\*可从[Deepseek开放平台/API Keys](https://platform.deepseek.com/api_keys)页面获取* |
+| `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | *`./config/apiconfig.json`* |
+| `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | *`./config/calllog.jsonl`* |
 | `MAX_CONCURRENCY` | 最大并发数 | *选填* | 1000 |
 | `DEFAULT_PROMPT_DIR` | 默认提示词文件夹 | *选填* | `./PresetsPrompt` |
 | `PARSET_PROMPT_NAME` | 默认提示词文件名(不包括后缀) | *选填* | `default` |
 | `README_FILE_PATH` | README文件位置 | *选填* | `./README.md` |
-| `RENDERED_IMAGE_DIR` | 渲染图片的缓存位置 | **必填** | `./temp/render` |
-| `STATIC_DIR` | 静态资源位置 | **必填** | `./static` |
-| `USER_DATA_DIR` | 用户数据存放位置 | **必填** | `./data/userdata` |
+| `RENDERED_IMAGE_DIR` | 渲染图片的缓存位置 | **必填** |* `./temp/render`* |
+| `STATIC_DIR` | 静态资源位置 | **必填** | *`./static`* |
+| `USER_DATA_DIR` | 用户数据存放位置 | **必填** | *`./data/userdata`* |
 | `USER_NICKNAME_MAPPING_FILE_PATH` | 用户昵称映射表文件位置 | *选填* | `./config/UserNicknameMapping.json` |
-| `WEB_PATH` | 前端页面文件存放位置 | **必填** | `./web` |
 | `TIMEZONE_OFFSET` | 默认时区偏移设置 | *选填* | `8` |
 | `DEFAULT_TEMPERATURE` | 默认模型温度 | *选填* | `1.0` |
 | `DEFAULT_TOP_P` | 默认模型`Top_P` | *选填* | `1.0` |
@@ -180,17 +180,17 @@
 | `DEFAULT_MAX_COMPLETION_TOKENS` | 默认模型最大生成token | *选填* | `1024` |
 | `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `60` |
 | `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
-| `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | `chat` |
+| `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | *`chat`* |
 | `WKHTMLTOPDF_PATH` | 渲染图片依赖的[`Wkhtmltopdf`](https://wkhtmltopdf.org/downloads.html)的位置 | **必填** | |
-| `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | `150` |
-| `BOT_NAME` | 机器人名字 | **必填** | |
-| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | |
-| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | |
-| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | |
+| `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | *`150`* |
+| `BOT_NAME` | 机器人名字 | **必填** | *`复读机`* |
+| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | *`2024`* |
+| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | *`06`* |
+| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | *`28`* |
 
 ---
 
-## 渲染样式
+## Markdown图片渲染样式
 
 | 风格 | 译名 |
 | :---: | :---: |
@@ -279,7 +279,7 @@
 | `keepAnswering`            | `ka`   | `KeepAnswering`           | `CHAT`      | 持续对话(常规)                 | 无                                        | 4.0 Beta | 1.0      | 无须输入，AI再次回复 |
 | `keepReasoning`            | `kr`   | `KeepReasoning`           | `CHAT`      | 持续对话(推理)                 | 无                                        | 4.0 Beta | 1.0      | 无须输入，AI再次使用推理回复 |
 | `renderChat`               | `rc`   | `RenderChat`              | `CHAT`      | 渲染Markdown回复               | 自然语言输入                               | 4.0 Beta | 1.0      | 强制渲染图片输出 |
-| `setRenderStyle`           | `srs`  | `SetRenderStyle`          | `RENDER`    | 设置渲染样式                   | [渲染样式](#渲染样式)                       | 4.0 Beta | 1.0      | 设置Markdown图片渲染样式 |
+| `setRenderStyle`           | `srs`  | `SetRenderStyle`          | `RENDER`    | 设置渲染样式                   | [渲染样式](#Markdown图片渲染样式)           | 4.0 Beta | 1.0      | 设置Markdown图片渲染样式 |
 | `npChat`                   | `np`   | `NoPromptChat`            | `CHAT`      | 不加载提示词进行对话            | 自然语言输入                               | 4.0 Beta | 1.0      | 使用常规模型 |
 | `prover`                   | `p`    | `Prover`                  | `CHAT`      | 使用Prover模型进行数学形式化证明 | 自然语言输入                               | 4.0 Beta | 1.0      | 使用`Prover`模型 |
 | `reason`                   | `r`    | `Reason`                  | `CHAT`      | 使用Reasoner模型进行推理        | 自然语言输入                               | 4.0 Beta | 1.0      | 使用`Reasoner`模型 |
@@ -296,3 +296,10 @@
 | `setTopP`                  | `stp`  | `SetTopP`                 | `CONFIG`    | 设置Top_P参数                  | 0~1的浮点数 或`0%`~`100%`的百分比           | 4.0.1 Beta | 1.0    | 设置Top_P参数 |
 | `setMaxTokens`             | `stm`  | `SetMaxTokens`            | `CONFIG`    | 设置最大生成tokens数           | 0~4096的整数                               | 4.0.1 Beta | 1.0    | 设置最大生成tokens数 |
 | `getContextTotalLength`    | `gctl` | `GetContextTotalLength`   | `CONTEXT`   | 获取上下文总长度               | 无                                         | 4.0.1 Beta | 1.0    | 获取上下文总长度     |
+
+---
+
+## 联系我们
+
+ - **QQ群**：`870063670`
+ - **Bot账号**: `3843736490`

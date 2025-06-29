@@ -170,6 +170,7 @@
 | `RENDERED_IMAGE_DIR` | 渲染图片的缓存位置 | **必填** |* `./temp/render`* |
 | `STATIC_DIR` | 静态资源位置 | **必填** | *`./static`* |
 | `USER_DATA_DIR` | 用户数据存放位置 | **必填** | *`./data/userdata`* |
+| `USER_DATA_SUB_DIR_NAME` | 用户子数据文件夹名称 | *选填* | `ParallelData` |
 | `USER_NICKNAME_MAPPING_FILE_PATH` | 用户昵称映射表文件位置 | *选填* | `./config/UserNicknameMapping.json` |
 | `TIMEZONE_OFFSET` | 默认时区偏移设置 | *选填* | `8` |
 | `DEFAULT_TEMPERATURE` | 默认模型温度 | *选填* | `1.0` |

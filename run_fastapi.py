@@ -139,37 +139,54 @@ async def chat_endpoint(
         )
     except ApiInfo.APIGroupNotFoundError as e:
         raise HTTPException(detail=str(e), status_code=400)
+    
+    # 渲染文本
     if rendering:
+        # 拼接渲染文本
         text = ""
         if 'reasoning_content' in context and context['reasoning_content']:
             text += ('> ' + context['reasoning_content'].replace('\n', '\n> ')).strip() + '\n\n---\n\n'
         text += context['content']
+
+        # 生成图片ID
         fuuid = uuid4()
         filename = f"{fuuid}.png"
 
         async def _wait_delete(sleep_time: int, filename: str):
+            """
+            等待一段时间后删除图片
+            """
             async def _delete(filename: str):
+                """
+                删除图片
+                """
                 await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
                 logger.info(f'Deleted image {filename}', user_id=user_id)
 
-                # 保证不调用第二次
-                delete_attempted = False
-                try:
-                    await asyncio.sleep(sleep_time)
-                except asyncio.CancelledError:
+            # 保证不调用第二次
+            delete_attempted = False
+            try:
+                await asyncio.sleep(sleep_time)
+            except asyncio.CancelledError:
+                await _delete(filename)
+                delete_attempted = True
+            finally:
+                if not delete_attempted:
                     await _delete(filename)
-                    delete_attempted = True
-                finally:
-                    if not delete_attempted:
-                        await _delete(filename)
-        
+
+        # 获取用户配置
         config:dict = await chat.user_config_manager.load(user_id, default={})
+        # 获取环境变量中的图片渲染风格
         default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")
+
+        # 获取图片渲染风格
         if isinstance(config, dict):
             style = config.get('render_style', default_style)
         else:
             style = default_style
         logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
+
+        # 调用markdown_to_image函数生成图片
         await asyncio.to_thread(
             markdown_to_image,
             markdown_text = text,
@@ -177,10 +194,15 @@ async def chat_endpoint(
             style = style
         )
         logger.info(f'Created image {filename}', user_id=user_id)
+
+        # 添加一个后台任务，60秒后删除图片
         background_tasks.add_task(_wait_delete, 60, filename)
+
+        # 生成图片的URL
         fileurl = request.url_for("render_file", file_uuid=fuuid)
         context['image_url'] = str(fileurl)
         context['file_uuid'] = str(fuuid)
+    
     return JSONResponse(context)
 # endregion
 

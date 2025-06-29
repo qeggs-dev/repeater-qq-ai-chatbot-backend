@@ -212,9 +212,12 @@ async def expand_variables(user_id: str, username: str = Form(...), text: str = 
     """
     Endpoint for expanding variables
     """
+    # 获取用户配置
     config = await chat.user_config_manager.load(user_id=user_id)
     if not config or not isinstance(config, dict):
         config = {}
+    
+    # 调用PromptVP类处理文本
     prompt_vp = await chat.get_prompt_vp(
         user_id = user_id,
         user_name = username,
@@ -222,7 +225,11 @@ async def expand_variables(user_id: str, username: str = Form(...), text: str = 
         config = config
     )
     output = prompt_vp.process(text)
+
+    # 日志输出命中信息
     logger.info(f"Prompt Hits Variable: {prompt_vp.hit_var()}/{prompt_vp.discover_var()}({prompt_vp.hit_var() / prompt_vp.discover_var() if prompt_vp.discover_var() != 0 else 0:.2%})", user_id = user_id)
+
+    # 返回结果
     return PlainTextResponse(output)
 # endregion
 
@@ -232,7 +239,9 @@ async def get_context(user_id: str):
     """
     Endpoint for getting context
     """
+    # 从chat.context_manager中加载用户ID为user_id的上下文
     context = await chat.context_manager.load(user_id, [])
+    # 返回JSON格式的上下文
     return JSONResponse(context)
 
 @app.get("/userdata/context/length/{user_id}")
@@ -240,20 +249,27 @@ async def get_context(user_id: str):
     """
     Endpoint for getting context
     """
+    # 从chat.context_manager中加载用户ID为user_id的上下文
     context = await chat.context_manager.load(user_id, [])
+    # 将上下文转换为Context.ContextObject对象
     context = Context.ContextObject().from_context(context)
+    # 返回JSONResponse，包含上下文的总长度和上下文的长度
     return JSONResponse(
         {
             "total_context_length": context.total_length,
             "context_length": len(context)
         }
     )
+
 @app.get("/userdata/context/userlist")
 async def get_context_userlist():
     """
     Endpoint for getting context
     """
+    # 从chat.context_manager中获取所有用户ID
     userid_list = await chat.context_manager.get_all_user_id()
+
+    # 返回JSONResponse，包含所有用户ID
     return JSONResponse(userid_list)
 
 @app.post("/userdata/context/withdraw/{user_id}")
@@ -261,12 +277,17 @@ async def withdraw_context(user_id: str, index: int = Form(...)):
     """
     Endpoint for withdrawing context
     """
+    # 从chat.context_manager中加载用户ID为user_id的上下文
     context = await chat.context_manager.load(user_id, [])
+
+    # 检查索引是否在上下文范围内
     if 0 <= index < len(context):
         context.pop(index)
         await chat.context_manager.save(user_id, context)
     else:
         raise HTTPException(400, "Index out of range")
+    
+    # 返回JSONResponse，新的上下文内容
     return JSONResponse(context)
 
 @app.post("/userdata/context/rewrite/{user_id}")
@@ -274,7 +295,10 @@ async def rewrite_context(user_id: str, index: int = Form(...), content: str = F
     """
     Endpoint for rewriting context
     """
+    # 从chat.context_manager中加载用户ID为user_id的上下文
     context = await chat.context_manager.load(user_id, [])
+
+    # 检查索引是否在上下文范围内
     if 0 <= index < len(context):
         if content:
             context[index]["content"] = content
@@ -286,6 +310,8 @@ async def rewrite_context(user_id: str, index: int = Form(...), content: str = F
         await chat.context_manager.save(user_id, context)
     else:
         raise HTTPException(400, "Index out of range")
+    
+    # 返回JSONResponse，新的上下文内容
     return JSONResponse(context)
 
 @app.post("/userdata/context/change/{user_id}")
@@ -293,15 +319,22 @@ async def change_context(user_id: str, new_context_id: str):
     """
     Endpoint for changing context
     """
+
+    # 设置用户ID为user_id的上下文为new_context_id
     await chat.context_manager.set_default_item(user_id, item = new_context_id)
-    return PlainTextResponse("Context deleted successfully")
+
+    # 返回成功文本
+    return PlainTextResponse("Context changed successfully")
 
 @app.delete("/userdata/context/delete/{user_id}")
 async def delete_context(user_id: str):
     """
     Endpoint for deleting context
     """
+    # 删除用户ID为user_id的上下文
     await chat.context_manager.delete(user_id)
+
+    # 返回成功文本
     return PlainTextResponse("Context deleted successfully")
 # endregion
 
@@ -311,7 +344,10 @@ async def get_prompt(user_id: str):
     """
     Endpoint for setting prompt
     """
+    # 获取用户ID为user_id的提示词
     prompt = await chat.prompt_manager.load(user_id)
+
+    # 返回提示词内容
     return PlainTextResponse(prompt)
 
 @app.post("/userdata/prompt/set/{user_id}")
@@ -319,7 +355,10 @@ async def set_prompt(user_id: str, prompt: str = Form(...)):
     """
     Endpoint for setting prompt
     """
+    # 设置用户ID为user_id的提示词为prompt
     await chat.prompt_manager.save(user_id, prompt)
+
+    # 返回成功文本
     return PlainTextResponse("Prompt set successfully")
 
 @app.get("/userdata/prompt/userlist")
@@ -327,7 +366,10 @@ async def get_prompt_userlist():
     """
     Endpoint for getting prompt user list
     """
+    # 获取所有用户ID
     userid_list = await chat.prompt_manager.get_all_user_id()
+
+    # 返回用户ID列表
     return JSONResponse(userid_list)
 
 @app.post("/userdata/prompt/change/{user_id}")
@@ -335,15 +377,21 @@ async def change_prompt(user_id: str, new_prompt_id: str):
     """
     Endpoint for changing prompt
     """
+    # 设置用户ID为user_id的提示词为new_prompt_id
     await chat.prompt_manager.set_default_item(user_id, item = new_prompt_id)
-    return PlainTextResponse("Prompt deleted successfully")
+
+    # 返回成功文本
+    return PlainTextResponse("Prompt changed successfully")
 
 @app.delete("/userdata/prompt/delete/{user_id}")
 async def delete_prompt(user_id: str):
     """
     Endpoint for deleting prompt
     """
+    # 删除用户ID为user_id的提示词
     await chat.prompt_manager.delete(user_id)
+
+    # 返回成功文本
     return PlainTextResponse("Prompt deleted successfully")
 # endregion
 
@@ -353,7 +401,10 @@ async def change_config(user_id: str):
     """
     Endpoint for changing config
     """
+    # 获取用户ID为user_id的配置
     config = await chat.get_config(user_id = user_id)
+
+    # 返回配置
     return JSONResponse(config)
 
 @app.put("/userdata/config/set/{user_id}/{value_type}")
@@ -361,6 +412,7 @@ async def set_config(user_id: str, value_type: str, key: str = Form(...), value:
     """
     Endpoint for setting config
     """
+    # 允许的值类型
     TYPES = {
         "int": int,
         "float": float,
@@ -370,17 +422,27 @@ async def set_config(user_id: str, value_type: str, key: str = Form(...), value:
         "list": list,
         "null": None
     }
+    # 检查值类型是否有效
     if value_type not in TYPES:
         raise HTTPException(400, "Invalid value type")
     if value_type == "null":
         value = None
     else:
+        # 将值转换为指定类型
         value = TYPES[value_type](value)
+    
+    # 读取配置
     config = await chat.user_config_manager.load(user_id=user_id)
     if config  is None:
         config = {}
+    
+    # 更新配置
     config[key] = value
+
+    # 保存配置
     await chat.user_config_manager.save(user_id=user_id, data=config)
+
+    # 返回新配置内容
     return JSONResponse(config)
 
 @app.post("/userdata/config/delkey/{user_id}")
@@ -388,9 +450,23 @@ async def delkey_config(user_id: str, key: str = Form(...)):
     """
     Endpoint for delkey config
     """
-    config:dict = await chat.user_config_manager.load(user_id=user_id)
+
+    # 读取配置
+    config = await chat.user_config_manager.load(user_id=user_id)
+    if not isinstance(config, dict):
+        config = {}
+    
+    # 如果项不存在，则抛出错误
+    if key not in config:
+        raise HTTPException(400, "Key not found")
+
+    # 删除项
     config.pop(key)
+
+    # 保存配置
     await chat.user_config_manager.save(user_id=user_id, config=config)
+
+    # 返回新配置内容
     return JSONResponse(config)
 
 @app.get("/userdata/config/userlist")
@@ -398,7 +474,11 @@ async def get_config_userlist():
     """
     Endpoint for getting config userlist
     """
+
+    # 获取所有用户ID
     userid_list = await chat.user_config_manager.get_all_user_id()
+
+    # 返回用户ID列表
     return JSONResponse(userid_list)
 
 @app.post("/userdata/config/change/{user_id}")
@@ -406,8 +486,12 @@ async def change_config(user_id: str, new_config_id: str):
     """
     Endpoint for changing config
     """
+
+    # 设置平行配置路由
     await chat.user_config_manager.set_default_item(user_id, item = new_config_id)
-    return PlainTextResponse("Config deleted successfully")
+
+    # 返回成功文本
+    return PlainTextResponse("Config changed successfully")
 
 
 @app.delete("/userdata/config/delete/{user_id}")
@@ -415,7 +499,10 @@ async def delete_config(user_id: str):
     """
     Endpoint for deleting config
     """
+    # 删除配置
     await chat.user_config_manager.delete(user_id)
+
+    # 返回成功文本
     return PlainTextResponse("Config deleted successfully")
 # endregion
 
@@ -426,12 +513,17 @@ async def get_userdata_file(user_id: str):
     """
     Endpoint for getting userdata file
     """
+    # 创建虚拟文件缓冲区
     buffer = BytesIO()
+
+    # 创建zip文件并写入
     with zipfile.ZipFile(buffer, "w") as zipf:
         zipf.writestr("user_context.json", json.dumps(await chat.context_manager.load(user_id = user_id, default = {}), indent = 4, ensure_ascii=False))
         zipf.writestr("user_config.json", json.dumps(await chat.user_config_manager.load(user_id = user_id, default = []), indent = 4, ensure_ascii=False))
         zipf.writestr("user_prompt.json", json.dumps(await chat.prompt_manager.load(user_id = user_id, default = ""), indent = 4, ensure_ascii=False))
     buffer.seek(0)
+
+    # 返回zip文件
     return StreamingResponse(buffer, media_type = "application/zip")
 
 # region get calllog
@@ -440,20 +532,34 @@ async def get_calllog():
     """
     Endpoint for getting calllog
     """
+
+    # 获取calllog
     calllogs = await chat.calllog.read_call_log()
+
+    # 将calllog转换为字典列表
     calllog_list = [calllog_object.as_dict for calllog_object in calllogs]
+
+    # 返回JSON响应
     return JSONResponse(calllog_list)
 
 @app.get("/calllog/stream")
 async def stream_call_logs():
     async def generate_jsonl():
+        """
+        将日志流转换为JSONL流格式
+        """
+        # 获取日志生成器
         generator = chat.calllog.read_stream_call_log()
+
+        # 将每个日志对象转换为字典并使用orjson序列化
         async for log_obj in generator:
             # 转换为字典并使用orjson序列化
             json_line = orjson.dumps(
                 log_obj.as_dict,
                 option=orjson.OPT_APPEND_NEWLINE
             )
+
+            # 生成JSONL行
             yield json_line
 
     return StreamingResponse(
@@ -474,8 +580,11 @@ async def render_file(file_uuid: str):
     """
     Endpoint for rendering file
     """
+    # 检查文件是否存在
     if not (env.path("RENDERED_IMAGE_DIR") / f"{file_uuid}.png").exists():
         raise HTTPException(detail="File not found", status_code=404)
+    
+    # 返回文件
     return FileResponse(env.path("RENDERED_IMAGE_DIR") / f"{file_uuid}.png")
 # endregion
 
@@ -484,6 +593,6 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         app = app,
-        host = env.str("HOST", "0.0.0.0"),
-        port = env.int("PORT", 8000)
+        host = env.str("HOST", "0.0.0.0"), # 默认监听所有地址
+        port = env.int("PORT", 8000) # 默认监听8000端口
     )

@@ -61,9 +61,11 @@ class ContextLoader:
                 config = await self.config.load(user_id)
                 if not isinstance(config, dict):
                     config = {}
-
+                
+                # 获取默认提示词文件名
                 parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME", "default"))
 
+                # 加载默认提示词文件
                 default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
                 if default_prompt_file.exists():
                     logger.info(f"Load Default Prompt File: {default_prompt_file}", user_id = user_id)
@@ -78,10 +80,12 @@ class ContextLoader:
         # 展开变量
         prompt = await self._expand_variables(prompt, variables = self.prompt_vp, user_id=user_id)
 
+        # 创建Content单元
         prompt = ContentUnit(
             role = ContextRole.SYSTEM,
             content = prompt
         )
+        # 将Content单元加入Context
         context.prompt = prompt
         return context
 
@@ -110,7 +114,7 @@ class ContextLoader:
         except orjson.JSONDecodeError:
             raise ContextLoadingSyntaxError(f"Context File Syntax Error: {user_id}")
         if not continue_completion:
-            # 构建并添加新的上下文
+            # 构建上下文对象
             contextObj = ContextObject()
             content = ContentUnit()
             content.content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
@@ -119,6 +123,7 @@ class ContextLoader:
             contextObj.update_from_context(context_list)
             logger.info(f"Load Context: {len(contextObj.context_list)}", user_id = user_id)
 
+            # 添加上下文
             if not context.context_list:
                 context.context_list = []
             context.context_list += contextObj.context_list
@@ -144,10 +149,13 @@ class ContextLoader:
         :param load_prompt: 是否加载提示词
         :param continue_completion: 是否继续生成
         """
+        # 如果允许添加提示词，就加载提示词，否则使用空上下文对象
         if load_prompt:
             context = await self._load_prompt(ContextObject(), user_id=user_id)
         else:
             context = ContextObject()
+        
+        # 添加上下文
         context = await self._append_context(
             context = context,
             user_id = user_id,

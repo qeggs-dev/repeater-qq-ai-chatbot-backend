@@ -109,18 +109,27 @@ class Client:
     # region 非流式API
     async def _call_api(self, user_id:str, request: Request) -> Response:
         """调用API"""
+        # 创建模型响应对象
         model_response = Response()
+        # 创建调用日志对象
         model_response.calling_log = CallLog()
+
+        # 创建OpenAI Client
         logger.info(f"Created OpenAI Client", user_id = user_id)
         client = AsyncOpenAI(base_url=request.url, api_key=request.key)
+
+        # 写入调用日志基础数据
         model_response.calling_log.url = request.url
         model_response.calling_log.user_id = user_id
         model_response.calling_log.user_name = request.user_name
         model_response.calling_log.model = request.model
         model_response.calling_log.stream = request.stream
 
+        # 如果上下文为空，则抛出异常
         if not request.context:
             raise ValueError("context is required")
+        
+        # 发送请求
         logger.info(f"Send Request", user_id = user_id)
         request_start_time = time.time_ns()
         response = await client.chat.completions.create(
@@ -137,9 +146,13 @@ class Client:
         )
         request_end_time = time.time_ns()
 
+        # 创建响应内容单元
         model_response_content_unit:ContentUnit = ContentUnit()
+        # 设置角色
         model_response_content_unit.role = ContextRole.ASSISTANT
+        # chunk计数
         chunk_count:int = 0
+        # 空chunk计数
         empty_chunk_count:int = 0
         print("\n", end="", flush=True)
 
@@ -147,20 +160,25 @@ class Client:
         if hasattr(response, "id"):
             model_response.id = response.id
         
+        # 写入响应创建时间
         if hasattr(response, "created"):
             model_response.created = response.created
         
+        # 写入模型名称
         if hasattr(response, "model"):
             model_response.model = response.model
         
+        # 写入系统指纹
         if hasattr(response, "system_fingerprint"):
             model_response.system_fingerprint = response.system_fingerprint
         
         # 处理响应内容
         if hasattr(response, "choices"):
             choices = response.choices[0]
+            # 写入完成原因
             if hasattr(choices, "finish_reason"):
                 model_response.finish_reason = choices.finish_reason
+            # 
             if hasattr(choices, "message"):
                 # 处理输出内容
                 if hasattr(choices.message, "content"):
@@ -175,6 +193,7 @@ class Client:
                 # 处理工具调用
                 if hasattr(choices.message, "tool_calls") and choices.message.tool_calls is not None:
                     for tool_call in choices.message.tool_calls:
+                        # 处理调用函数
                         if hasattr(tool_call, "id"):
                             id = tool_call.id
                         else:
@@ -192,7 +211,8 @@ class Client:
                                 arguments = tool_call.function.arguments
                             else:
                                 arguments = ""
-
+                        
+                        # 添加调用函数信息
                         model_response_content_unit.funcResponse.callingFunctionResponse.append(
                             FunctionResponseUnit(
                                 id = id,
@@ -264,18 +284,27 @@ class Client:
     # region 流式API
     async def _call_stream_api(self, user_id:str, request: Request) -> Response:
         """调用流式API"""
+        # 创建响应对象
         model_response = Response()
+        # 创建调用日志
         model_response.calling_log = CallLog()
+
+        # 创建OpenAI Client
         logger.info(f"Created OpenAI Client", user_id = user_id)
         client = AsyncOpenAI(base_url=request.url, api_key=request.key)
+
+        # 写入调用日志基础信息
         model_response.calling_log.url = request.url
         model_response.calling_log.user_id = user_id
         model_response.calling_log.user_name = request.user_name
         model_response.calling_log.model = request.model
         model_response.calling_log.stream = request.stream
 
+        # 如果context为空，则抛出异常
         if not request.context:
             raise ValueError("context is required")
+        
+        # 请求流式连接
         logger.info(f"Make Request", user_id = user_id)
         request_start_time = time.time_ns()
         response = await client.chat.completions.create(
@@ -292,21 +321,33 @@ class Client:
         )
         request_end_time = time.time_ns()
 
+        # 创建响应缓冲区单元
         model_response_content_unit:ContentUnit = ContentUnit()
+        # 设置角色
         model_response_content_unit.role = ContextRole.ASSISTANT
+        # chunk计数器
         chunk_count:int = 0
+        # 空chunk计数器
         empty_chunk_count:int = 0
+
+        # 开始处理流式响应
         logger.info(f"Start Streaming", user_id = user_id)
         print("\n", end="", flush=True)
+        # 记录流开始时间
         stream_processing_start_time:int = time.time_ns()
+        # 记录上次chunk时间
         last_chunk_time:int = 0
+        # chunk耗时列表
         chunk_times:list[int] = []
         async for chunk in response:
+            # 翻译chunk
             delta_data = await self._process_chunk(chunk)
 
+            # 记录会话开启时间
             if not model_response.created:
                 model_response.created = delta_data.created
             
+            # 记录chunk时间
             if last_chunk_time == 0:
                 last_chunk_time = delta_data.created * (10**9)
             else:
@@ -315,15 +356,19 @@ class Client:
                 chunk_times.append(time_difference)
                 last_chunk_time = this_chunk_time
             
+            # 记录会话ID
             if not model_response.id:
                 model_response.id = delta_data.id
             
+            # 记录模型名称
             if not model_response.model:
                 model_response.model = delta_data.model
             
+            # 记录token使用情况
             if delta_data.token_usage:
                 model_response.token_usage = delta_data.token_usage
 
+            # 记录模型推理响应内容
             if delta_data.reasoning_content:
                 if request.print_chunk:
                     if not model_response_content_unit.reasoning_content:
@@ -331,6 +376,7 @@ class Client:
                     print(f"\033[7m{delta_data.reasoning_content}\033[0m", end="", flush=True)
                 model_response_content_unit.reasoning_content += delta_data.reasoning_content
             
+            # 记录模型响应内容
             if delta_data.content:
                 if request.print_chunk:
                     if not model_response_content_unit.content:
@@ -338,6 +384,7 @@ class Client:
                     print(delta_data.content, end="", flush=True)
                 model_response_content_unit.content += delta_data.content
             
+            # 记录模型工具调用内容
             if delta_data.function_id:
                 model_response_content_unit.funcResponse.callingFunctionResponse.append(
                     FunctionResponseUnit(
@@ -348,13 +395,16 @@ class Client:
                     )
                 )
 
+            # 判断是否为空并增加空chunk计数器
             if delta_data.is_empty:
                 empty_chunk_count += 1
             chunk_count += 1
 
+            # 处理回调函数
             if request.continue_processing_callback_function is not None:
                 if request.continue_processing_callback_function(user_id, delta_data):
                     break
+        # 处理结束
         stream_processing_end_time = time.time_ns()
         print('\n\n', end="", flush=True)
 
@@ -392,31 +442,36 @@ class Client:
         :param chunk: API响应块
         :return: Delta_data对象
         """
+        # 初始化对象
         tokens_usage = TokensCount()
         delta_data = Delta()
-        # 处理元数据
+        # 转录ID
         if hasattr(chunk, "id"):
             delta_data.id = chunk.id
+        # 转录创建时间
         if hasattr(chunk, "created"):
             delta_data.created = chunk.created
+        # 转录模型名称
         if hasattr(chunk, "model"):
             delta_data.model = chunk.model
         
-        # 处理内容
+        # 转录内容
         if hasattr(chunk, "choices") and len(chunk.choices) > 0:
             choice = chunk.choices[0]
             if hasattr(choice, "delta"):
-                # 处理推理内容
+                # 转录推理内容
                 if hasattr(choice.delta, "reasoning_content"):
                     reasoning_data = choice.delta.reasoning_content
                     if reasoning_data is not None:
                         delta_data.reasoning_content = reasoning_data
 
-                # 处理响应内容
+                # 转录响应内容
                 if hasattr(choice.delta, "content"):
                     content = choice.delta.content
                     if content:
                         delta_data.content = content
+                
+                # 转录工具调用
                 if hasattr(choice.delta, "tool_calls"):
                     content = choice.delta.tool_calls
                     if content:
@@ -431,7 +486,7 @@ class Client:
                             if hasattr(tool.function, "arguments"):
                                 delta_data.function_arguments = tool.function.arguments
 
-        # 获取usage数据
+        # 转录usage数据
         if hasattr(chunk, 'usage') and chunk.usage is not None:
             # 只在最后一个chunk中获取usage数据
             if hasattr(chunk.usage, 'prompt_tokens') and chunk.usage.prompt_tokens is not None:
@@ -452,7 +507,13 @@ class Client:
 
     # region 打印日志
     async def _print_log(self, user_id: str, request: Request, response: Response):
-        # 打印统计日志
+        """
+        打印统计日志
+
+        :param user_id: 用户ID
+        :param request: 请求对象
+        :param response: 响应对象
+        """
         logger.info("============= API INFO =============", user_id = user_id)
         logger.info(f"API_URL: {request.url}", user_id = user_id)
         logger.info(f"Model: {response.model}", user_id = user_id)

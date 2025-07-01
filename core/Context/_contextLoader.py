@@ -17,8 +17,11 @@ from loguru import logger
 # ==== 自定义库 ==== #
 from ..DataManager import (
     PromptManager,
-    ContextManager,
-    UserConfigManager
+    ContextManager
+)
+from ..ConfigManager import (
+    ConfigManager,
+    Configs
 )
 from ._object import (
     ContextObject,
@@ -37,15 +40,16 @@ env = Env()
 
 class ContextLoader:
     def __init__(
-        self, config: UserConfigManager,
+        self,
+        config: ConfigManager,
         prompt: PromptManager,
         context: ContextManager,
         prompt_vp: PromptVP
     ):
-        self.config = config
-        self.prompt = prompt
-        self.context = context
-        self.prompt_vp = prompt_vp
+        self.config: ConfigManager = config
+        self.prompt: PromptManager = prompt
+        self.context: ContextManager = context
+        self.prompt_vp: PromptVP = prompt_vp
     
     async def _load_prompt(self, context:ContextObject, user_id: str) -> ContextObject:
         user_prompt:str = await self.prompt.load(user_id=user_id, default='')
@@ -59,8 +63,6 @@ class ContextLoader:
             if default_prompt_dir.exists():
                 # 如果存在默认提示词文件，则加载默认提示词文件
                 config = await self.config.load(user_id)
-                if not isinstance(config, dict):
-                    config = {}
                 
                 # 获取默认提示词文件名
                 parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME", "default"))

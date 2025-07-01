@@ -81,25 +81,23 @@ async def readme():
     return FileResponse(readme_path, media_type="text/markdown")
 # endregion
 
-# region static(暂时停用)
-# @app.get("/static/{path:path}")
-# async def static(path: str):
-#     """
-#     Endpoint for serving static files
-#     """
-#     if not (env.path("STATIC_DIR") / f"{path}.png").exists():
-#         raise HTTPException(detail="File not found", status_code=404)
-#     return FileResponse(env.path("STATIC_DIR") / path)
-# 
-# @app.get("/favicon.ico")
-# async def favicon():
-#     """
-#     Endpoint for serving favicon
-#     """
-#     if not (env.path("STATIC_DIR") / "favicon.ico").exists():
-#         raise HTTPException(detail="File not found", status_code=404)
-#     return FileResponse(env.path("STATIC_DIR") / "favicon.ico")
-# endregion
+@app.get("/static/{path:path}")
+async def static(path: str):
+    """
+    Endpoint for serving static files
+    """
+    if not (env.path("STATIC_DIR") / f"{path}.png").exists():
+        raise HTTPException(detail="File not found", status_code=404)
+    return FileResponse(env.path("STATIC_DIR") / path)
+
+@app.get("/favicon.ico")
+async def favicon():
+    """
+    Endpoint for serving favicon
+    """
+    if not (env.path("STATIC_DIR") / "favicon.ico").exists():
+        raise HTTPException(detail="File not found", status_code=404)
+    return FileResponse(env.path("STATIC_DIR") / "favicon.ico")
 
 # region Chat
 @app.post("/chat/completion/{user_id}")
@@ -175,15 +173,12 @@ async def chat_endpoint(
                     await _delete(filename)
 
         # 获取用户配置
-        config:dict = await chat.user_config_manager.load(user_id, default={})
+        config = await chat.user_config_manager.load(user_id)
         # 获取环境变量中的图片渲染风格
         default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")
 
         # 获取图片渲染风格
-        if isinstance(config, dict):
-            style = config.get('render_style', default_style)
-        else:
-            style = default_style
+        style = config.get('render_style', default_style)
         logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
 
         # 调用markdown_to_image函数生成图片
@@ -433,8 +428,6 @@ async def set_config(user_id: str, value_type: str, key: str = Form(...), value:
     
     # 读取配置
     config = await chat.user_config_manager.load(user_id=user_id)
-    if config  is None:
-        config = {}
     
     # 更新配置
     config[key] = value
@@ -453,15 +446,13 @@ async def delkey_config(user_id: str, key: str = Form(...)):
 
     # 读取配置
     config = await chat.user_config_manager.load(user_id=user_id)
-    if not isinstance(config, dict):
-        config = {}
     
     # 如果项不存在，则抛出错误
     if key not in config:
         raise HTTPException(400, "Key not found")
 
     # 删除项
-    config.pop(key)
+    del config[key]
 
     # 保存配置
     await chat.user_config_manager.save(user_id=user_id, config=config)
@@ -481,8 +472,20 @@ async def get_config_userlist():
     # 返回用户ID列表
     return JSONResponse(userid_list)
 
+@app.post("/userdata/config/branch/{user_id}")
+async def get_config_branch_id(user_id: str):
+    """
+    Endpoint for changing config
+    """
+
+    # 设置平行配置路由
+    await chat.user_config_manager.get_default_item(user_id)
+
+    # 返回成功文本
+    return PlainTextResponse("Config changed successfully")
+
 @app.post("/userdata/config/change/{user_id}")
-async def change_config(user_id: str, new_config_id: str):
+async def change_config(user_id: str, new_config_id: str = Form(...)):
     """
     Endpoint for changing config
     """

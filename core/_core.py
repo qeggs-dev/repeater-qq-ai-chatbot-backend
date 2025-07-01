@@ -28,8 +28,11 @@ from .Context import (
 )
 from .DataManager import (
     ContextManager,
-    PromptManager,
-    UserConfigManager
+    PromptManager
+)
+from .ConfigManager import (
+    ConfigManager,
+    Configs
 )
 from .ApiInfo import (
     ApiInfo,
@@ -68,7 +71,7 @@ class Core:
         # 初始化用户数据管理器
         self.context_manager = ContextManager()
         self.prompt_manager = PromptManager()
-        self.user_config_manager = UserConfigManager()
+        self.user_config_manager = ConfigManager()
 
         # 初始化变量加载器
         self.promptvariable = LoadPromptVariable(
@@ -120,7 +123,7 @@ class Core:
         user_id: str,
         user_name: str = "",
         model_type: str = "",
-        config: dict = {}
+        config: Configs = Configs(),
     ) -> PromptVP:
         """
         获取指定用户的PromptVP实例
@@ -139,7 +142,7 @@ class Core:
                 env.int("BIRTHDAY_DAY"),
                 name=env.str("BOT_NAME","Bot")
             ),
-            model_type = model_type,
+            model_type = model_type if model_type else config.get("model_type"),
             botname = env.str("BOT_NAME", "Bot"),
             birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
             zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
@@ -179,7 +182,7 @@ class Core:
     # endregion
 
     # region > get config
-    async def get_config(self, user_id: str, default: dict = {}) -> dict:
+    async def get_config(self, user_id: str) -> Configs:
         """
         加载用户配置
         :param user_id: 用户ID
@@ -187,8 +190,6 @@ class Core:
         :return: 用户配置
         """
         config = await self.user_config_manager.load(user_id=user_id)
-        if not config or not isinstance(config, dict):
-            config = default
         return config
     # endregion
 

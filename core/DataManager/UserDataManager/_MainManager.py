@@ -7,10 +7,11 @@ from environs import Env
 # ==== 自定义库 ==== #
 from .SubManager import SubManager
 from sanitizeFilename import sanitize_filename, sanitize_filename_async
+from .._user_mainmanager_interface import UserMainManagerInterface
 
 env = Env()
 
-class MainManager:
+class MainManager(UserMainManagerInterface):
     def __init__(self, base_name: str, cache_metadata:bool = False, cache_data:bool = False, sub_dir_name:str = "ParallelData"):
         self.base_name = sanitize_filename(base_name)
         self.sub_managers:dict[str, SubManager] = {}

@@ -82,8 +82,8 @@ class ApiInfo:
         try:
             async with aiofiles.open(path, 'rb') as f:
                 fdata = await f.read()
-                raw_api_groups: List[dict] = await asyncio.to_thread(orjson.loads(fdata))
-                await asyncio.to_thread(self._parse_api_groups(raw_api_groups))
+                raw_api_groups: List[dict] = await asyncio.to_thread(orjson.loads, fdata)
+                await asyncio.to_thread(self._parse_api_groups, raw_api_groups)
         except orjson.JSONDecodeError as e:
             raise ValueError(f'Invalid JSON format: {e}')
         except OSError as e:

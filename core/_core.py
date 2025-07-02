@@ -425,3 +425,6 @@ class Core:
                 "model_id": api.model_id,
             }
     # endregion
+
+    async def reload_apiinfo(self):
+        await self.apiinfo.load_async(env.path('API_INFO_FILE_PATH'))

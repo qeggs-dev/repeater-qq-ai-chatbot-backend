@@ -480,7 +480,7 @@ async def set_config(user_id: str, value_type: str, key: str = Form(...), value:
     await chat.user_config_manager.force_write(user_id=user_id, configs=config)
 
     # 返回新配置内容
-    return JSONResponse(config)
+    return JSONResponse(config.configs)
 
 @app.post("/userdata/config/delkey/{user_id}")
 async def delkey_config(user_id: str, key: str = Form(...)):

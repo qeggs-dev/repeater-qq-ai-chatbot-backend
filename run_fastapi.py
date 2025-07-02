@@ -309,14 +309,36 @@ async def rewrite_context(user_id: str, index: int = Form(...), content: str = F
     # 返回JSONResponse，新的上下文内容
     return JSONResponse(context)
 
+@app.get("/userdata/context/branch/{user_id}")
+async def get_context_branch_id(user_id: str):
+    """
+    Endpoint for getting context branch id list
+    """
+    # 获取用户ID为user_id的上下文分支ID
+    branchs = await chat.context_manager.get_all_item_id(user_id)
+
+    # 返回上下文分支ID
+    return JSONResponse(branchs)
+
+@app.get("/userdata/context/now_branch/{user_id}")
+async def get_context_now_branch_id(user_id: str):
+    """
+    Endpoint for getting context branch id
+    """
+    # 获取用户ID为user_id的上下文分支ID
+    branch_id = await chat.context_manager.get_default_item_id(user_id)
+
+    # 返回上下文分支ID
+    return PlainTextResponse(branch_id)
+
 @app.post("/userdata/context/change/{user_id}")
-async def change_context(user_id: str, new_context_id: str):
+async def change_context(user_id: str, new_branch_id: str):
     """
     Endpoint for changing context
     """
 
     # 设置用户ID为user_id的上下文为new_context_id
-    await chat.context_manager.set_default_item(user_id, item = new_context_id)
+    await chat.context_manager.set_default_item_id(user_id, item = new_branch_id)
 
     # 返回成功文本
     return PlainTextResponse("Context changed successfully")
@@ -367,13 +389,35 @@ async def get_prompt_userlist():
     # 返回用户ID列表
     return JSONResponse(userid_list)
 
+@app.get("/userdata/prompt/branch/{user_id}")
+async def get_prompt_branch_id(user_id: str):
+    """
+    Endpoint for getting prompt branch ID
+    """
+    # 获取用户ID为user_id的提示词分支ID
+    branchs = await chat.prompt_manager.get_all_item_id(user_id)
+
+    # 返回分支ID
+    return JSONResponse(branchs)
+
+@app.get("/userdata/prompt/now_branch/{user_id}")
+async def get_prompt_now_branch_id(user_id: str):
+    """
+    Endpoint for getting prompt branch ID
+    """
+    # 获取用户ID为user_id的提示词分支ID
+    branch_id = await chat.prompt_manager.get_default_item_id(user_id)
+
+    # 返回分支ID
+    return PlainTextResponse(branch_id)
+
 @app.post("/userdata/prompt/change/{user_id}")
-async def change_prompt(user_id: str, new_prompt_id: str):
+async def change_prompt(user_id: str, new_branch_id: str):
     """
     Endpoint for changing prompt
     """
     # 设置用户ID为user_id的提示词为new_prompt_id
-    await chat.prompt_manager.set_default_item(user_id, item = new_prompt_id)
+    await chat.prompt_manager.set_default_item_id(user_id, item = new_branch_id)
 
     # 返回成功文本
     return PlainTextResponse("Prompt changed successfully")
@@ -433,7 +477,7 @@ async def set_config(user_id: str, value_type: str, key: str = Form(...), value:
     config[key] = value
 
     # 保存配置
-    await chat.user_config_manager.save(user_id=user_id, data=config)
+    await chat.user_config_manager.force_write(user_id=user_id, configs=config)
 
     # 返回新配置内容
     return JSONResponse(config)
@@ -455,7 +499,7 @@ async def delkey_config(user_id: str, key: str = Form(...)):
     del config[key]
 
     # 保存配置
-    await chat.user_config_manager.save(user_id=user_id, config=config)
+    await chat.user_config_manager.force_write(user_id=user_id, configs=config)
 
     # 返回新配置内容
     return JSONResponse(config)
@@ -472,26 +516,38 @@ async def get_config_userlist():
     # 返回用户ID列表
     return JSONResponse(userid_list)
 
-@app.post("/userdata/config/branch/{user_id}")
+@app.get("/userdata/config/branch/{user_id}")
 async def get_config_branch_id(user_id: str):
     """
-    Endpoint for changing config
+    Endpoint for get config branch id
     """
 
     # 设置平行配置路由
-    await chat.user_config_manager.get_default_item(user_id)
+    branchs = await chat.user_config_manager.get_all_item_id(user_id)
 
-    # 返回成功文本
-    return PlainTextResponse("Config changed successfully")
+    # 返回分支ID
+    return JSONResponse(branchs)
+
+@app.get("/userdata/config/now_branch/{user_id}")
+async def get_config_now_branch_id(user_id: str):
+    """
+    Endpoint for get config branch id
+    """
+
+    # 设置平行配置路由
+    branch_id = await chat.user_config_manager.get_default_item(user_id)
+
+    # 返回分支ID
+    return PlainTextResponse(branch_id)
 
 @app.post("/userdata/config/change/{user_id}")
-async def change_config(user_id: str, new_config_id: str = Form(...)):
+async def change_config(user_id: str, new_branch_id: str = Form(...)):
     """
     Endpoint for changing config
     """
 
     # 设置平行配置路由
-    await chat.user_config_manager.set_default_item(user_id, item = new_config_id)
+    await chat.user_config_manager.set_default_item(user_id, item = new_branch_id)
 
     # 返回成功文本
     return PlainTextResponse("Config changed successfully")

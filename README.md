@@ -179,6 +179,8 @@
 | `CONTEXT_USERDATA_CACHE_DATA` | 控制用户数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
 | `PROMPT_USERDATA_CACHE_DATA` | 控制提示词数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
 | `USERCONFIG_USERDATA_CACHE_DATA` | 配置用户数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
+| `CONFIG_CACHE_DOWNGRADE_WAIT_TIME` | 配置管理器缓存降级等待时间 | *选填* | `60` |
+| `CONFIG_CACHE_DEBONCE_SAVE_WAIT_TIME` | 配置管理器缓存延迟保存时间 | *选填* | `60` |
 | `USER_NICKNAME_MAPPING_FILE_PATH` | 用户昵称映射表文件位置 | *选填* | `./config/UserNicknameMapping.json` |
 | `TIMEZONE_OFFSET` | 默认时区偏移设置 | *选填* | `8` |
 | `DEFAULT_TEMPERATURE` | 默认模型温度 | *选填* | `1.0` |
@@ -260,18 +262,24 @@
 | `GET` | `/userdata/context/userlist` | | 获取用户列表 |
 | `POST` | `/userdata/context/withdraw/{user_id:str}` | `index(int)` | 撤回上下文 |
 | `POST` | `/userdata/context/rewrite/{user_id:str}` | `index(int)`<br/>`content(str)`<br/>`reasoning_content(str)` | 重写上下文 |
-| `POST` | `/userdata/context/change/{user_id:str}` | `new_context_id(str)` | 切换上下文 |
+| `GET` | `/userdata/context/branch/{user_id:str}` | | 获取用户分支ID列表 |
+| `GET` | `/userdata/context/now_branch/{user_id:str}` | | 获取用户当前分支ID |
+| `POST` | `/userdata/context/change/{user_id:str}` | `new_branch_id(str)` | 切换上下文 |
 | `DELETE` | `/userdata/context/delete/{user_id:str}` | | 删除上下文 |
 | `GET` | `/userdata/prompt/get/{user_id:str}` | | 获取提示词 |
 | `POST` | `/userdata/prompt/set/{user_id:str}` | `prompt(str)` | 设置提示词 |
 | `GET` | `/userdata/prompt/userlist` | | 获取用户列表 |
-| `POST` | `/userdata/prompt/change/{user_id:str}` | `new_prompt_id(str)` | 切换提示词 |
+| `GET` | `/userdata/prompt/branch/{user_id:str}` | | 获取用户分支ID列表 |
+| `GET` | `/userdata/prompt/now_branch/{user_id:str}` | | 获取用户当前分支ID |
+| `POST` | `/userdata/prompt/change/{user_id:str}` | `new_branch_id(str)` | 切换提示词 |
 | `DELETE` | `/userdata/prompt/delete/{user_id:str}` | | 删除提示词 |
 | `GET` | `/userdata/config/get/{user_id:str}` | | 获取配置 |
 | `POST` | `/userdata/config/set/{user_id:str}/{value_type:str}` | `config(str)` | 设置配置 |
 | `POST` | `/userdata/config/delkey/{user_id:str}` | `key(str)` | 删除配置 |
 | `GET` | `/userdata/config/userlist` | | 获取用户列表 |
-| `POST` | `/userdata/config/change/{user_id:str}` | `new_user_id(str)` | 修改用户ID |
+| `GET` | `/userdata/config/branch/{user_id:str}` | | 获取用户分支ID列表 |
+| `GET` | `/userdata/config/now_branch/{user_id:str}` | | 获取用户当前分支ID |
+| `POST` | `/userdata/config/change/{user_id:str}` | `new_branch_id(str)` | 切换分支数据 |
 | `DELETE` | `/userdata/config/delete/{user_id:str}` | | 删除用户配置文件 |
 | `GET` | `/userdata/file/{user_id:str}.zip` | | 获取用户数据 |
 | `GET` | `/calllog` | | 获取调用日志(不推荐) |

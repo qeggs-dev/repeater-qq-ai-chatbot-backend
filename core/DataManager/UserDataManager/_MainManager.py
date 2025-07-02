@@ -74,7 +74,7 @@ class MainManager:
             item = 'default'
         await manager.delete(item)
     
-    async def set_default_item(self, user_id: str, item: str) -> None:
+    async def set_default_item_id(self, user_id: str, item: str) -> None:
         user_id = await sanitize_filename_async(user_id)
         manager = self.sub_managers.setdefault(
             user_id,
@@ -92,7 +92,7 @@ class MainManager:
             metadata = {'default_item': item}
         await manager.save_metadata(metadata)
 
-    async def get_default_item(self, user_id: str) -> str:
+    async def get_default_item_id(self, user_id: str) -> str:
         user_id = await sanitize_filename_async(user_id)
         manager = self.sub_managers.setdefault(
             user_id,
@@ -112,5 +112,5 @@ class MainManager:
     async def get_all_user_id(self) -> list:
         return [f.name for f in (env.path('USER_DATA_DIR') / self.base_name).iterdir() if f.is_dir()]
 
-    async def get_all_item(self, user_id: str) -> list:
-        return [f.name for f in (env.path('USER_DATA_DIR') / self.base_name / user_id / self.sub_dir_name).iterdir() if f.is_dir()]
+    async def get_all_item_id(self, user_id: str) -> list:
+        return [f.stem for f in (env.path('USER_DATA_DIR') / self.base_name / user_id / self.sub_dir_name).iterdir() if f.is_file()]

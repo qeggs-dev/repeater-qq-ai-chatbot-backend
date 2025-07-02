@@ -15,7 +15,8 @@ from fastapi import (
     Request,
     BackgroundTasks,
     Form,
-    Query
+    Query,
+    Header
 )
 from fastapi.responses import (
     FileResponse,
@@ -37,6 +38,7 @@ from core import (
 from core.CallLog import CallAPILog
 from Markdown import markdown_to_image
 from Markdown import STYLES as MARKDOWN_STYLES
+from admin_apikey_manager import AdminKeyManager
 
 app = FastAPI(title="RepeaterChatBackend")
 env = Env()
@@ -45,32 +47,8 @@ env.read_env()
 
 chat = Core()
 
-# region Web(已废弃)
-# @app.get("/")
-# @app.get("/web")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "index.html")
-# 
-# @app.get("/web/calllog")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "calllog.html")
-# 
-# @app.get("/web/admin")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "admin" / "index.html")
-# 
-# @app.get("/web/admin/chat")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "admin" / "chat.html")
-# 
-# @app.get("/web/admin/prompt")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "admin" / "prompt.html")
-# 
-# @app.get("/web/admin/config")
-# async def root():
-#     return FileResponse(env.path("WEB_PATH") / "admin" / "config.html")
-# endregion
+# 生成或读取API Key
+admin_api_key = AdminKeyManager()
 
 # region Readme
 @app.get("/readme.md")
@@ -645,6 +623,30 @@ async def render_file(file_uuid: str):
     
     # 返回文件
     return FileResponse(env.path("RENDERED_IMAGE_DIR") / f"{file_uuid}.png")
+# endregion
+
+# region Admin API
+@app.post("/admin/reload/apiinfo")
+async def reload_apiinfo(api_key: str = Header(..., alias="X-Admin-API-Key")):
+    """
+    Endpoint for reloading apiinfo
+    """
+    if not admin_api_key.validate_key(api_key):
+        raise HTTPException(detail="Invalid API key", status_code=401)
+    logger.info("Reloading apiinfo", user_id="[Admin API]")
+    await chat.reload_apiinfo()
+    return JSONResponse({"detail": "Apiinfo reloaded"})
+
+
+@app.post("/admin/regenerate/admin_key")
+async def regenerate_admin_key(api_key: str = Header(..., alias="X-Admin-API-Key")):
+    """
+    Endpoint for regenerating admin key
+    """
+    if not admin_api_key.validate_key(api_key):
+        raise HTTPException(detail="Invalid API key", status_code=401)
+    logger.info("Regenerating admin key", user_id="[Admin API]")
+    admin_api_key.generate()
 # endregion
 
 

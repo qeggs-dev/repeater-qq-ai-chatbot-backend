@@ -198,6 +198,7 @@
 | `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | *`2024`* |
 | `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | *`06`* |
 | `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | *`28`* |
+| `ADMIN_API_KEY` | 机器人管理API的密钥 | *选填* | \*自动生成 |
 
 ---
 
@@ -285,6 +286,8 @@
 | `GET` | `/calllog` | | 获取调用日志(不推荐) |
 | `GET` | `/calllog/stream` | | 流式获取调用日志(推荐) |
 | `GET` | `/file/render/{file_uuid:str}.png` | | 获取图片渲染输出文件 |
+| `POST` | `/admin/reload/apiinfo` | (Header: `X-Admin-API-Key`) | 刷新API信息 |
+| `POST` | `/admin/regenerate/admin_key` | (Header: `X-Admin-API-Key`) | 重新生成管理密钥 |
 
 ---
 

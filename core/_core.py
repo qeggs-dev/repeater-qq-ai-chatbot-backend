@@ -363,6 +363,10 @@ class Core:
                 logger.warning("No message to send", user_id = user_id)
             logger.info(f"User Name: {user_name}", user_id = user_id)
 
+            # 如果有设置角色名称信息，则打印日志
+            if role_name:
+                logger.info(f"Role Name: {role_name}", user_id = user_id)
+
             # 设置请求对象的参数信息
             request.user_name = user_name
             request.temperature = config.get("temperature", env.float("DEFAULT_TEMPERATURE", default=None))

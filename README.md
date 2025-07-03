@@ -156,21 +156,30 @@
 
 | 环境变量 | 描述 | 是否必填 | 默认值(*示例值*) |
 | :---: | :---: | :---: | :---: |
-| `HOST` | 服务监听的IP | *选填* | 0.0.0.0 |
-| `PORT` | 服务监听端口 | *选填* | 8080 |
-| `SAVE_CALL_LOG` | 运行时是否记录主API的调用日志 | *选填* | True |
-| `VERSION` | 版本号 | *选填* | \*由代码自动生成 |
 | `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | *\*可从[Deepseek开放平台/API Keys](https://platform.deepseek.com/api_keys)页面获取* |
 | `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | *`./config/apiconfig.json`* |
 | `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | *`./config/calllog.jsonl`* |
-| `MAX_CONCURRENCY` | 最大并发数 | *选填* | 1000 |
-| `DEFAULT_PROMPT_DIR` | 默认提示词文件夹 | *选填* | `./PresetsPrompt` |
-| `PARSET_PROMPT_NAME` | 默认提示词文件名(不包括后缀) | *选填* | `default` |
-| `README_FILE_PATH` | README文件位置 | *选填* | `./README.md` |
 | `RENDERED_IMAGE_DIR` | 渲染图片的缓存位置 | **必填** |* `./temp/render`* |
 | `STATIC_DIR` | 静态资源位置 | **必填** | *`./static`* |
 | `USER_DATA_DIR` | 用户数据存放位置 | **必填** | *`./data/userdata`* |
+| `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | *`chat`* |
+| `WKHTMLTOPDF_PATH` | 渲染图片依赖的[`Wkhtmltopdf`](https://wkhtmltopdf.org/downloads.html)的位置 | **必填** | |
+| `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | *`150`* |
+| `BOT_NAME` | 机器人名字 | **必填** | *`复读机`* |
+| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | *`2024`* |
+| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | *`06`* |
+| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | *`28`* |
+| `HOST` | 服务监听的IP | *选填* | 0.0.0.0 |
+| `PORT` | 服务监听端口 | *选填* | 8080 |
+| `SAVE_CALL_LOG` | 运行时是否记录主API的调用日志 | *选填* | True |
+| `README_FILE_PATH` | README文件位置 | *选填* | `./README.md` |
+| `VERSION` | 版本号 | *选填* | \*由代码自动生成 |
+| `RENDERED_DEFAULT_IMAGE_TIMEOUT` | 渲染图片的默认超时时间 | *选填* | 60 |
+| `MAX_CONCURRENCY` | 最大并发数 | *选填* | 1000 |
+| `DEFAULT_PROMPT_DIR` | 默认提示词文件夹 | *选填* | `./PresetsPrompt` |
+| `PARSET_PROMPT_NAME` | 默认提示词文件名(不包括后缀) | *选填* | `default` |
 | `USER_DATA_SUB_DIR_NAME` | 用户子数据文件夹名称 | *选填* | `ParallelData` |
+| `USER_DATA_METADATA_FILENAME` | 用户数据元数据文件名 | *选填* | `metadata.json` |
 | `USER_DATA_CACHE_METADATA` | 是否缓存用户数据元数据 | *选填* | `False` |
 | `CONTEXT_USERDATA_CACHE_METADATA` | 控制用户数据元数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_METADATA`的值 |
 | `PROMPT_USERDATA_CACHE_METADATA` | 控制提示词数据元数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_METADATA`的值 |
@@ -191,13 +200,6 @@
 | `DEFAULT_MAX_COMPLETION_TOKENS` | 默认模型最大生成token | *选填* | `1024` |
 | `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `1200` |
 | `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
-| `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | *`chat`* |
-| `WKHTMLTOPDF_PATH` | 渲染图片依赖的[`Wkhtmltopdf`](https://wkhtmltopdf.org/downloads.html)的位置 | **必填** | |
-| `DEFAULT_OUTPUT_DPI` | 渲染图片输出的DPI | **必填** | *`150`* |
-| `BOT_NAME` | 机器人名字 | **必填** | *`复读机`* |
-| `BIRTHDAY_YEAR` | 机器人出生年份 | **必填** | *`2024`* |
-| `BIRTHDAY_MONTH` | 机器人出生月份 | **必填** | *`06`* |
-| `BIRTHDAY_DAY` | 机器人出生日期 | **必填** | *`28`* |
 | `ADMIN_API_KEY` | 机器人管理API的密钥 | *选填* | \*自动生成 |
 
 ---
@@ -257,6 +259,7 @@
 | 请求 | URL | 参数(表单数据) | 描述 |
 | :---: | :---: | :---: | :---: |
 | `POST` | `/chat/completion/{user_id:str}` | `message(str)`<br/>`user_name(str)`<br/>`role(str) = 'user'`<br/>`role_name(str)`<br/>`model_type(str)`<br/>`load_prompt(bool) = true`<br/>`rendering(bool) = false`<br/>`save_context(bool) = true`<br/>`reference_context_id(str)`<br/>`continue_completion(bool)`  | AI聊天 |
+| `POST` | `/render/{user_id:str}` | `text(str)`<br/>`style(str)` | 文本渲染 |
 | `POST` | `/userdata/variable/expand/{user_id:str}` | `username(str)`<br/>`text(str)` | 变量解析 |
 | `GET` | `/userdata/context/get/{user_id:str}` | | 获取上下文 |
 | `GET` | `/userdata/context/length/{user_id:str}` | | 获取上下文长度 |

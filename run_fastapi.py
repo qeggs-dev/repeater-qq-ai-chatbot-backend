@@ -1,3 +1,4 @@
+# region imports
 # ==== 标准库 ==== #
 import os
 import asyncio
@@ -6,6 +7,8 @@ from typing import Any
 from io import BytesIO
 import zipfile
 import json
+import time
+from pathlib import Path
 
 # ==== 第三方库 ==== #
 import orjson
@@ -36,10 +39,11 @@ from core import (
     Context
 )
 from core.CallLog import CallAPILog
-from Markdown import markdown_to_image
-from Markdown import STYLES as MARKDOWN_STYLES
+from Markdown import markdown_to_image, STYLES as MARKDOWN_STYLES
 from admin_apikey_manager import AdminKeyManager
+# endregion
 
+# region Global Objects
 app = FastAPI(title="RepeaterChatBackend")
 env = Env()
 
@@ -49,6 +53,23 @@ chat = Core()
 
 # 生成或读取API Key
 admin_api_key = AdminKeyManager()
+# endregion
+
+# region Tool: validate_path
+def validate_path(base_path: str | Path, user_path: str | Path) -> bool:
+    """
+    验证路径是否合法
+    """
+    # 转换为Path对象以便于操作
+    base_path = Path(base_path)
+    user_path = Path(user_path)
+
+    # 获取基础路径的绝对路径
+    requested_path = (base_path.resolve() / user_path).resolve()
+    
+    # 检查路径是否在base_path的子目录内
+    return requested_path.is_relative_to(base_path)
+# endregion
 
 # region Readme
 @app.get("/readme.md")
@@ -80,8 +101,6 @@ async def favicon():
 # region Chat
 @app.post("/chat/completion/{user_id}")
 async def chat_endpoint(
-    request: Request,
-    background_tasks: BackgroundTasks,
     user_id: str,
     message: str = Form(""),
     user_name: str = Form(""),
@@ -89,7 +108,6 @@ async def chat_endpoint(
     role_name: str = Form(None),
     model_type: str | None = Form(None),
     load_prompt: bool = Form(True),
-    rendering: bool = Form(False),
     save_context: bool = Form(True),
     reference_context_id: str | None = Form(None),
     continue_completion: bool = Form(False)
@@ -115,68 +133,90 @@ async def chat_endpoint(
         )
     except ApiInfo.APIGroupNotFoundError as e:
         raise HTTPException(detail=str(e), status_code=400)
-    
-    # 渲染文本
-    if rendering:
-        # 拼接渲染文本
-        text = ""
-        if 'reasoning_content' in context and context['reasoning_content']:
-            text += ('> ' + context['reasoning_content'].replace('\n', '\n> ')).strip() + '\n\n---\n\n'
-        text += context['content']
+    return JSONResponse(context)
+# endregion
 
-        # 生成图片ID
-        fuuid = uuid4()
-        filename = f"{fuuid}.png"
+# region Render
+@app.post("/render/{user_id}")
+async def render(
+    request: Request,
+    background_tasks: BackgroundTasks,
+    user_id: str,
+    text: str = Form(...),
+    style: str | None = Form(None),
+    timeout: int | None = Form(None),
+):
+    """
+    Endpoint for rendering markdown text to image
+    """
+    # 生成图片ID
+    fuuid = uuid4()
+    filename = f"{fuuid}.png"
 
-        async def _wait_delete(sleep_time: int, filename: str):
+    # 延迟删除函数
+    async def _wait_delete(sleep_time: int, filename: str):
+        """
+        等待一段时间后删除图片
+        """
+        async def _delete(filename: str):
             """
-            等待一段时间后删除图片
+            删除图片
             """
-            async def _delete(filename: str):
-                """
-                删除图片
-                """
-                await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
-                logger.info(f'Deleted image {filename}', user_id=user_id)
-
-            # 保证不调用第二次
-            delete_attempted = False
-            try:
-                await asyncio.sleep(sleep_time)
-            except asyncio.CancelledError:
-                await _delete(filename)
-                delete_attempted = True
-            finally:
-                if not delete_attempted:
-                    await _delete(filename)
-
+            await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
+            logger.info(f'Deleted image {filename}', user_id = user_id)
+        
+        try:
+            await asyncio.sleep(sleep_time)
+            await _delete(filename)
+        except asyncio.CancelledError:
+            logger.info("Image delete task cancelled", user_id = user_id)
+            await _delete(filename)
+        
+    if style:
+        if style not in MARKDOWN_STYLES:
+            raise HTTPException(status_code=400, detail="Invalid style")
+    else:
         # 获取用户配置
         config = await chat.user_config_manager.load(user_id)
         # 获取环境变量中的图片渲染风格
         default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")
-
         # 获取图片渲染风格
         style = config.get('render_style', default_style)
-        logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
-
-        # 调用markdown_to_image函数生成图片
-        await asyncio.to_thread(
-            markdown_to_image,
-            markdown_text = text,
-            output_path = env.path("RENDERED_IMAGE_DIR") / filename,
-            style = style
-        )
-        logger.info(f'Created image {filename}', user_id=user_id)
-
-        # 添加一个后台任务，60秒后删除图片
-        background_tasks.add_task(_wait_delete, 60, filename)
-
-        # 生成图片的URL
-        fileurl = request.url_for("render_file", file_uuid=fuuid)
-        context['image_url'] = str(fileurl)
-        context['file_uuid'] = str(fuuid)
     
-    return JSONResponse(context)
+    if not timeout:
+        timeout = env.int("RENDERED_DEFAULT_IMAGE_TIMEOUT", 60)
+    
+    # 日志打印文件名和渲染风格
+    logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
+
+    # 调用markdown_to_image函数生成图片
+    await asyncio.to_thread(
+        markdown_to_image,
+        markdown_text = text,
+        output_path = env.path("RENDERED_IMAGE_DIR") / filename,
+        style = style
+    )
+    create_ms = time.time_ns() // 10**6
+    create = create_ms // 1000
+    logger.info(f'Created image {filename}', user_id = user_id)
+
+    # 添加一个后台任务，时间到后删除图片
+    background_tasks.add_task(_wait_delete, timeout, filename)
+
+    # 生成图片的URL
+    fileurl = request.url_for("render_file", file_uuid=fuuid)
+
+    return JSONResponse(
+        {
+            "image_url": str(fileurl),
+            "file_uuid": str(fuuid),
+            "style": style,
+            "timeout": timeout,
+            "text": text,
+            "create": create,
+            "create_ms": create_ms
+        }
+    )
 # endregion
 
 # region PromptVariableExpansion

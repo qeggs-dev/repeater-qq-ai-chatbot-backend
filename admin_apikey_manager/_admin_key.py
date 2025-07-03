@@ -125,7 +125,7 @@ class AdminKeyManager:
             source = AdminKeySource.ENV
             logger.info("API Key Loaded from Environment Variables", user_id="[System]")
         except environs.EnvError:
-            api_key = secrets.token_urlsafe(32)
+            api_key = self._generate_an_api_key()
             source = AdminKeySource.RANDOM
             logger.warning(f"API Key Not Found in Environment Variables, Generated Randomly(Only for Development): {api_key}", user_id="[System]")
         
@@ -136,7 +136,7 @@ class AdminKeyManager:
         """
         生成新的随机 API Key
         """
-        self._api_key = self._examine_api_key(secrets.token_urlsafe(32))
+        self._api_key = self._generate_an_api_key()
         self._source = AdminKeySource.RANDOM
 
     def _generate_an_api_key(self) -> str:

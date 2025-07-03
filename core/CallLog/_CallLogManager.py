@@ -17,7 +17,7 @@ class CallLogManager:
 
         # 防抖保存等待时间
         if debonce_save_wait_time is None:
-            debonce_save_wait_time = _env.float("CALLLOG_DEBONCE_SAVE_WAIT_TIME", 60)
+            debonce_save_wait_time = _env.float("CALLLOG_DEBONCE_SAVE_WAIT_TIME", 1200.0)
         self.debonce_save_wait_time:float = debonce_save_wait_time
 
         # 最大缓存大小

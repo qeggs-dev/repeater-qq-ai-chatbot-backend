@@ -426,5 +426,14 @@ class Core:
             }
     # endregion
 
+    # region 重新加载API信息
     async def reload_apiinfo(self):
         await self.apiinfo.load_async(env.path('API_INFO_FILE_PATH'))
+    # endregion
+
+    # region 加载指定API INFO文件
+    async def load_apiinfo(self, api_info_file_path: Path):
+        if not api_info_file_path.exists():
+            raise FileNotFoundError(f"File not found: {api_info_file_path}")
+        await self.apiinfo.load_async(api_info_file_path)
+    # endregion

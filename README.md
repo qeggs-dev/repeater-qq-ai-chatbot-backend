@@ -179,8 +179,8 @@
 | `CONTEXT_USERDATA_CACHE_DATA` | 控制用户数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
 | `PROMPT_USERDATA_CACHE_DATA` | 控制提示词数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
 | `USERCONFIG_USERDATA_CACHE_DATA` | 配置用户数据缓存是否开启 | *选填* | \*`USER_DATA_CACHE_DATA`的值 |
-| `CONFIG_CACHE_DOWNGRADE_WAIT_TIME` | 配置管理器缓存降级等待时间 | *选填* | `60` |
-| `CONFIG_CACHE_DEBONCE_SAVE_WAIT_TIME` | 配置管理器缓存延迟保存时间 | *选填* | `60` |
+| `CONFIG_CACHE_DOWNGRADE_WAIT_TIME` | 配置管理器缓存降级等待时间 | *选填* | `600` |
+| `CONFIG_CACHE_DEBONCE_SAVE_WAIT_TIME` | 配置管理器缓存延迟保存时间 | *选填* | `600` |
 | `USER_NICKNAME_MAPPING_FILE_PATH` | 用户昵称映射表文件位置 | *选填* | `./config/UserNicknameMapping.json` |
 | `TIMEZONE_OFFSET` | 默认时区偏移设置 | *选填* | `8` |
 | `DEFAULT_TEMPERATURE` | 默认模型温度 | *选填* | `1.0` |
@@ -189,7 +189,7 @@
 | `DEFAULT_PRESENCE_PENALTY` | 默认模型存在惩罚 | *选填* | `0.0` |
 | `DEFAULT_MAX_TOKENS` | 默认模型最大输出token<br/>(部分API不支持 `DEFAULT_MAX_COMPLETION_TOKENS`设置 提供此项以兼容) | *选填* | `1024` |
 | `DEFAULT_MAX_COMPLETION_TOKENS` | 默认模型最大生成token | *选填* | `1024` |
-| `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `60` |
+| `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `1200` |
 | `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
 | `DEFAULT_MODEL_TYPE` | 调用时默认使用的模型类型 | **必填** | *`chat`* |
 | `WKHTMLTOPDF_PATH` | 渲染图片依赖的[`Wkhtmltopdf`](https://wkhtmltopdf.org/downloads.html)的位置 | **必填** | |

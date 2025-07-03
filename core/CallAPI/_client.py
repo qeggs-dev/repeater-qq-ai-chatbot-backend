@@ -305,7 +305,7 @@ class Client:
             raise ValueError("context is required")
         
         # 请求流式连接
-        logger.info(f"Make Request", user_id = user_id)
+        logger.info(f"Start Connecting to the API", user_id = user_id)
         request_start_time = time.time_ns()
         response = await client.chat.completions.create(
             model = request.model,

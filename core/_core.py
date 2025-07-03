@@ -252,7 +252,7 @@ class Core:
                 user_id = reference_context_id,
                 message = message,
                 role = role,
-                roleName = role_name if role_name else user_name,
+                role_name = role_name if role_name else user_name,
                 load_prompt = load_prompt,
                 continue_completion = continue_completion
             )
@@ -261,6 +261,7 @@ class Core:
                 user_id = user_id,
                 message = message,
                 role = role,
+                role_name = role_name,
                 load_prompt = load_prompt,
                 continue_completion = continue_completion
             )
@@ -426,12 +427,12 @@ class Core:
             }
     # endregion
 
-    # region 重新加载API信息
+    # region > 重新加载API信息
     async def reload_apiinfo(self):
         await self.apiinfo.load_async(env.path('API_INFO_FILE_PATH'))
     # endregion
 
-    # region 加载指定API INFO文件
+    # region > 加载指定API INFO文件
     async def load_apiinfo(self, api_info_file_path: Path):
         if not api_info_file_path.exists():
             raise FileNotFoundError(f"File not found: {api_info_file_path}")

@@ -95,9 +95,9 @@ class ContextLoader:
         self,
         context:ContextObject,
         user_id: str,
-        New_Message: str,
+        new_message: str,
         role: str = 'user',
-        roleName: str | None = None,
+        role_name: str | None = None,
         continue_completion: bool = False
     ) -> ContextObject:
         """
@@ -119,9 +119,9 @@ class ContextLoader:
             # 构建上下文对象
             contextObj = ContextObject()
             content = ContentUnit()
-            content.content = await self._expand_variables(New_Message, variables = self.prompt_vp, user_id=user_id)
+            content.content = await self._expand_variables(new_message, variables = self.prompt_vp, user_id=user_id)
             content.role = ContextRole(role)
-            content.role_name = roleName
+            content.role_name = role_name
             contextObj.update_from_context(context_list)
             logger.info(f"Load Context: {len(contextObj.context_list)}", user_id = user_id)
 
@@ -137,7 +137,7 @@ class ContextLoader:
         user_id: str,
         message: str,
         role: str = 'user',
-        roleName: str | None = None,
+        role_name: str | None = None,
         load_prompt: bool = True,
         continue_completion: bool = False
     ) -> ContextObject:
@@ -161,9 +161,9 @@ class ContextLoader:
         context = await self._append_context(
             context = context,
             user_id = user_id,
-            New_Message = message,
+            new_message = message,
             role = role,
-            roleName = roleName,
+            role_name = role_name,
             continue_completion = continue_completion
         )
         return context

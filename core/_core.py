@@ -16,32 +16,15 @@ import aiofiles
 import orjson
 
 # ==== 自定义库 ==== #
-from .CallAPI import (
-    Client,
-    Request,
-    Response
-)
-from .Context import (
-    ContextLoader,
-    LoadPromptVariable,
-    ContextObject
-)
-from .DataManager import (
-    ContextManager,
-    PromptManager
-)
-from .ConfigManager import (
-    ConfigManager,
-    Configs
-)
+from . import CallAPI
+from . import Context
+from . import DataManager
+from . import ConfigManager
 from .ApiInfo import (
     ApiInfo,
     ApiGroup
 )
-from .CallLog import (
-    CallLogManager,
-    CallLog
-)
+from . import CallLog
 from TextProcessors import (
     PromptVP
 )
@@ -69,16 +52,16 @@ class Core:
         self.lock = asyncio.Lock()
 
         # 初始化用户数据管理器
-        self.context_manager = ContextManager()
-        self.prompt_manager = PromptManager()
-        self.user_config_manager = ConfigManager()
+        self.context_manager = DataManager.ContextManager()
+        self.prompt_manager = DataManager.PromptManager()
+        self.user_config_manager = ConfigManager.ConfigManager()
 
         # 初始化变量加载器
-        self.promptvariable = LoadPromptVariable(
+        self.promptvariable = Context.LoadPromptVariable(
             version = __version__
         )
         # 初始化Client并设置并发大小
-        self.api_client = Client(env.int('MAX_CONCURRENCY', 10) if max_concurrency is None else max_concurrency)
+        self.api_client = CallAPI.Client(env.int('MAX_CONCURRENCY', 10) if max_concurrency is None else max_concurrency)
 
         # 初始化API信息管理器
         self.apiinfo = ApiInfo()
@@ -89,7 +72,7 @@ class Core:
         self.session_locks = {}
 
         # 初始化调用日志管理器
-        self.calllog = CallLogManager(env.path('CALL_LOG_FILE_PATH'))
+        self.calllog = CallLog.CallLogManager(env.path('CALL_LOG_FILE_PATH'))
         
         # 添加退出函数
         def _exit():
@@ -123,7 +106,7 @@ class Core:
         user_id: str,
         user_name: str = "",
         model_type: str = "",
-        config: Configs = Configs(),
+        config: ConfigManager.Configs = ConfigManager.Configs(),
     ) -> PromptVP:
         """
         获取指定用户的PromptVP实例
@@ -182,7 +165,7 @@ class Core:
     # endregion
 
     # region > get config
-    async def get_config(self, user_id: str) -> Configs:
+    async def get_config(self, user_id: str) -> ConfigManager.Configs:
         """
         加载用户配置
         :param user_id: 用户ID
@@ -200,7 +183,7 @@ class Core:
         user_name: str,
         model_type: str = env.str("DEFAULT_MODEL_TYPE", "chat"),
         user_config: dict = {},
-    ) -> ContextLoader:
+    ) -> Context.ContextLoader:
         """
         加载上下文
         :param user_id: 用户ID
@@ -209,7 +192,7 @@ class Core:
         :param user_config: 用户配置
         :return: 上下文加载器
         """
-        context_loader = ContextLoader(
+        context_loader = Context.ContextLoader(
             config=self.user_config_manager,
             prompt=self.prompt_manager,
             context=self.context_manager,
@@ -224,7 +207,7 @@ class Core:
     
     async def get_context(
         self,
-        context_loader: ContextLoader,
+        context_loader: Context.ContextLoader,
         user_id: str,
         message: str,
         user_name: str,
@@ -233,7 +216,7 @@ class Core:
         load_prompt: bool = True,
         continue_completion: bool = False,
         reference_context_id: str | None = None
-    ) -> ContextObject:
+    ) -> Context.ContextObject:
         """
         获取上下文
         :param context_loader: 上下文加载器
@@ -340,7 +323,7 @@ class Core:
             )
             
             # 创建请求对象
-            request = Request()
+            request = CallAPI.Request()
             # 设置上下文
             request.context = context
 
@@ -382,8 +365,21 @@ class Core:
             # 记录预处理结束时间
             call_prepare_end_time = time.time_ns()
 
+            # 输出
+            output =  {
+                "reasoning_content": "",
+                "content": "",
+                "model_name": api.model_name,
+                "model_type": api.model_type,
+                "model_id": api.model_id,
+            }
+
             # 提交请求
-            response = await self.api_client.submit_Request(user_id=user_id, request=request)
+            try:
+                response = await self.api_client.submit_Request(user_id=user_id, request=request)
+            except CallAPI.Exceptions.CallApiException as e:
+                output["content"] = f"Error:{e}"
+                return output
 
             # 补充调用日志的时间信息
             response.calling_log.task_start_time = task_start_time
@@ -422,13 +418,10 @@ class Core:
             logger.success(f"API call successful", user_id = user_id)
 
             # 返回模型输出内容
-            return {
-                "reasoning_content": response.context.last_content.reasoning_content,
-                "content": response.context.last_content.content,
-                "model_name": api.model_name,
-                "model_type": api.model_type,
-                "model_id": api.model_id,
-            }
+            
+            output["reasoning_content"] = response.context.last_content.reasoning_content
+            output["content"] = response.context.last_content.content
+            return output
     # endregion
 
     # region > 重新加载API信息

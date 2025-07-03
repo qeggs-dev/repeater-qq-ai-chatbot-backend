@@ -7,3 +7,4 @@ from ._object import (
     Logprob,
     Delta
 )
+from . import _exceptions as Exceptions

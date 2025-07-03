@@ -9,7 +9,7 @@ import time
 from datetime import datetime, timezone
 
 # ==== 第三方库 ==== #
-from openai import AsyncOpenAI
+import openai
 from environs import Env
 from loguru import logger
 
@@ -33,6 +33,7 @@ from TimeParser import (
     format_deltatime,
     format_deltatime_ns
 )
+from ._exceptions import *
 
 # ==== 本模块代码 ==== #
 env = Env()
@@ -93,10 +94,15 @@ class Client:
     # region 提交任务
     async def submit_Request(self, user_id:str, request: Request) -> Response:
         """提交请求到协程池，并等待返回结果"""
-        if request.stream:
-            response = await self._submit(self._call_stream_api(user_id, request), user_id = user_id)
-        else:
-            response = await self._submit(self._call_api(user_id, request), user_id = user_id)
+        try:
+            if request.stream:
+                response = await self._submit(self._call_stream_api(user_id, request), user_id = user_id)
+            else:
+                response = await self._submit(self._call_api(user_id, request), user_id = user_id)
+        except openai.NotFoundError:
+            raise ModelNotFoundError(request.model)
+        except openai.APIConnectionError:
+            raise APIConnectionError(f"{request.url} Connection Failed")
         
         await self._print_log(
             user_id = user_id,
@@ -116,7 +122,7 @@ class Client:
 
         # 创建OpenAI Client
         logger.info(f"Created OpenAI Client", user_id = user_id)
-        client = AsyncOpenAI(base_url=request.url, api_key=request.key)
+        client = openai.AsyncOpenAI(base_url=request.url, api_key=request.key)
 
         # 写入调用日志基础数据
         model_response.calling_log.url = request.url
@@ -291,7 +297,7 @@ class Client:
 
         # 创建OpenAI Client
         logger.info(f"Created OpenAI Client", user_id = user_id)
-        client = AsyncOpenAI(base_url=request.url, api_key=request.key)
+        client = openai.AsyncOpenAI(base_url=request.url, api_key=request.key)
 
         # 写入调用日志基础信息
         model_response.calling_log.url = request.url

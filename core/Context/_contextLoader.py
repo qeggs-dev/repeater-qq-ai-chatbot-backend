@@ -19,7 +19,7 @@ from ..DataManager import (
     PromptManager,
     ContextManager
 )
-from ..ConfigManager import (
+from ..UserConfigManager import (
     ConfigManager,
     Configs
 )

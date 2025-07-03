@@ -26,7 +26,7 @@ class JsonlSubManager(SubManager):
         if not isinstance(default, list):
             raise TypeError('default must be a list')
         outlist = []
-        async with self.lock:
+        async with self._global_lock:
             try:
                 async with aiofiles.open(self._get_file_path(item), "rb") as f:
                     async for line in f:
@@ -44,7 +44,7 @@ class JsonlSubManager(SubManager):
     async def save(self, item: str, data: list) -> None:
         if not isinstance(data, list):
             raise TypeError('data must be a list')
-        async with self.lock:
+        async with self._global_lock:
             async with aiofiles.open(self._get_file_path(item), "wb") as f:
                 for line in data:
                     await f.write(orjson.dumps(line))
@@ -53,7 +53,7 @@ class JsonlSubManager(SubManager):
     async def append(self, item: str, data: list) -> None:
         if not isinstance(data, list):
             raise TypeError('data must be a list')
-        async with self.lock:
+        async with self._global_lock:
             async with aiofiles.open(self._get_file_path(item), "ab") as f:
                 for line in data:
                     await f.write(orjson.dumps(line))

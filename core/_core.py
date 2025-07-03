@@ -19,7 +19,7 @@ import orjson
 from . import CallAPI
 from . import Context
 from . import DataManager
-from . import ConfigManager
+from . import UserConfigManager
 from .ApiInfo import (
     ApiInfo,
     ApiGroup
@@ -54,7 +54,7 @@ class Core:
         # 初始化用户数据管理器
         self.context_manager = DataManager.ContextManager()
         self.prompt_manager = DataManager.PromptManager()
-        self.user_config_manager = ConfigManager.ConfigManager()
+        self.user_config_manager = UserConfigManager.ConfigManager()
 
         # 初始化变量加载器
         self.promptvariable = Context.LoadPromptVariable(
@@ -106,7 +106,7 @@ class Core:
         user_id: str,
         user_name: str = "",
         model_type: str = "",
-        config: ConfigManager.Configs = ConfigManager.Configs(),
+        config: UserConfigManager.Configs = UserConfigManager.Configs(),
     ) -> PromptVP:
         """
         获取指定用户的PromptVP实例
@@ -165,7 +165,7 @@ class Core:
     # endregion
 
     # region > get config
-    async def get_config(self, user_id: str) -> ConfigManager.Configs:
+    async def get_config(self, user_id: str) -> UserConfigManager.Configs:
         """
         加载用户配置
         :param user_id: 用户ID

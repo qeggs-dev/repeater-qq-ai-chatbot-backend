@@ -6,7 +6,7 @@ from environs import Env
 
 # ==== 自定义库 ==== #
 from .SubManager import SubManager
-from sanitizeFilename import sanitize_filename, sanitize_filename_async
+from SanitizeFilename import sanitize_filename, sanitize_filename_async
 from .._user_mainmanager_interface import UserMainManagerInterface
 
 env = Env()

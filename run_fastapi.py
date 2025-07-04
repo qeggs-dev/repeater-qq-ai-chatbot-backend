@@ -15,6 +15,7 @@ from pathlib import Path
 import orjson
 from environs import Env
 env = Env()
+env.read_env()
 from fastapi import (
     FastAPI,
     Request,
@@ -37,7 +38,7 @@ from loguru import logger
 # ==== 自定义库 ==== #
 from ConfigManager import ConfigLoader
 configs = ConfigLoader(
-    config_file_path = env.path("CONFIG_FILE_PATH")
+    config_file_path = env.path("CONFIG_FILE_PATH", "./configs/project_config.json")
 )
 from core import (
     Core,
@@ -51,9 +52,6 @@ from admin_apikey_manager import AdminKeyManager
 
 # region Global Objects
 app = FastAPI(title="RepeaterChatBackend")
-
-env.read_env()
-
 chat = Core()
 
 # 生成或读取API Key

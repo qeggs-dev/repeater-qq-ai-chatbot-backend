@@ -15,7 +15,7 @@ from ConfigManager import ConfigLoader
 
 class SubManager:
     _configs = ConfigLoader()
-    _metadata_filename = _configs.get_config("User_Data_Metadata_Filename", "metadata.json").get_value(str)
+    _metadata_filename = ""
 
     def __init__(self, base_path: Path, sub_dir_name: str, cache_metadata:bool = False, cache_data:bool = False):
         self.base_path: Path = base_path
@@ -25,6 +25,8 @@ class SubManager:
         self._item_locks: weakref.WeakValueDictionary[str, asyncio.Lock] = weakref.WeakValueDictionary()
         if not self.base_path.exists():
             self.base_path.mkdir(parents=True, exist_ok=True)
+        
+        self._metadata_filename = self._configs.get_config("User_Data_Metadata_Filename", "metadata.json").get_value(str)
         
         self.cache_metadata:bool = cache_metadata
         self._metadata_cache: Any | None = None

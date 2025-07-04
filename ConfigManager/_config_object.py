@@ -3,6 +3,8 @@ from typing import Any, Callable, TypeVar
 from enum import Enum
 from copy import deepcopy
 from pathlib import Path
+import traceback
+from loguru import logger
 
 
 T = TypeVar('T')
@@ -23,6 +25,16 @@ class ConfigObject:
             return f"<ConfigObject: \"{self.name}\" = {repr(self._values[self._now_index])}>"
         else:
             return f"<ConfigObject: \"{self.name}\" = None>"
+        
+    def _get_caller_name(self):
+        stack = traceback.extract_stack()
+        if len(stack) > 2:
+            caller = stack[-3]
+        return {
+            "name": caller.name,
+            "filename": caller.filename,
+            "linelo": caller.lineno
+        }
 
     @property
     def value_type(self) -> type:
@@ -53,7 +65,6 @@ class ConfigObject:
             raise TypeError(f"Value must be of type {self.value_type.__name__}")
         self._values.append(value)
         self._now_index = len(self._values) - 1
-
         if self._changed_callbacks:
             for callback in self._changed_callbacks.values():
                 callback(value)
@@ -124,14 +135,16 @@ class ConfigObject:
         self._values = []
         self._now_index = 0
     
-    def downgrade(self) -> None:
+    def downgrade(self) -> Any:
         """
         Downgrade to the previous value.
         """
         if len(self._values) > 1:
-            self._values.pop()
+            item = self._values.pop()
             if self._now_index > len(self._values) - 1:
                 self._now_index = len(self._values) - 1
+            return item
+        return None
     
     def backtracking(self) -> bool:
         """

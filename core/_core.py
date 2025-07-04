@@ -72,7 +72,7 @@ class Core:
         self.session_locks = {}
 
         # 初始化调用日志管理器
-        self.calllog = CallLog.CallLogManager(configs.get_config('CALL_LOG_FILE_PATH').get_value(Path))
+        self.calllog = CallLog.CallLogManager(configs.get_config('Call_Log_File_Path').get_value(Path))
 
         
         # 添加退出函数

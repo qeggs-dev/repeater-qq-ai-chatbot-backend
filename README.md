@@ -157,6 +157,10 @@
 | 环境变量 | 描述 | 是否必填 | 默认值(*示例值*) |
 | :---: | :---: | :---: | :---: |
 | `*API_KEY` | API_Key (具体变量名由`API_INFO_FILE_PATH`指向 文件中`ApiKeyEnv`字段的名称) | **必填** | *\*可从[Deepseek开放平台/API Keys](https://platform.deepseek.com/api_keys)页面获取* |
+
+## 配置选项表
+
+| 选项 | 描述 | 是否必填 | 默认值(*示例值*) |
 | `API_INFO_FILE_PATH` | API信息文件路径 | **必填** | *`./config/apiconfig.json`* |
 | `CALL_LOG_FILE_PATH` | 主API调用日志的持久化存储文件 | **必填** | *`./config/calllog.jsonl`* |
 | `RENDERED_IMAGE_DIR` | 渲染图片的缓存位置 | **必填** |* `./temp/render`* |
@@ -201,6 +205,33 @@
 | `CALLLOG_DEBONCE_SAVE_WAIT_TIME` | 日志持久化存储的防抖时间 | *选填* | `1200` |
 | `CALLLOG_MAX_CACHE_SIZE` | 日志缓存的最大数量 | *选填* | `1000` |
 | `ADMIN_API_KEY` | 机器人管理API的密钥 | *选填* | \*自动生成 |
+
+示例配置文件格式：
+```json
+[
+    {
+        "name": "WKHTMLTOPDF_PATH",
+        "values": [
+            {
+                "type": "path",
+                "system": "Windows",
+                "value": "C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe"
+            },
+            {
+                "type": "path",
+                "system": "Linux",
+                "value": "/usr/local/bin/wkhtmltopdf"
+            },
+            {
+                "type": "path",
+                "system": "*",
+                "value": "./wkhtmltopdf/wkhtmltopdf"
+            }
+        ]
+    }
+]
+```
+PS: `system`字段可以让配置加载器在读取该项的时候自动按照平台取值哦
 
 ---
 

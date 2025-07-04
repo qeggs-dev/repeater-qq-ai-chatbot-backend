@@ -1,6 +1,7 @@
 # region imports
 # ==== 标准库 ==== #
 import os
+import sys
 import asyncio
 from uuid import uuid4
 from typing import Any
@@ -13,6 +14,7 @@ from pathlib import Path
 # ==== 第三方库 ==== #
 import orjson
 from environs import Env
+env = Env()
 from fastapi import (
     FastAPI,
     Request,
@@ -33,6 +35,10 @@ from fastapi.exceptions import (
 from loguru import logger
 
 # ==== 自定义库 ==== #
+from ConfigManager import ConfigLoader
+configs = ConfigLoader(
+    config_file_path = env.path("CONFIG_FILE_PATH")
+)
 from core import (
     Core,
     ApiInfo,
@@ -41,20 +47,14 @@ from core import (
 from core.CallLog import CallAPILog
 from Markdown import markdown_to_image, STYLES as MARKDOWN_STYLES
 from admin_apikey_manager import AdminKeyManager
-from ConfigManager import ConfigLoader
 # endregion
 
 # region Global Objects
 app = FastAPI(title="RepeaterChatBackend")
-env = Env()
 
 env.read_env()
 
 chat = Core()
-
-configs = ConfigLoader(
-    config_file_path = env.path("CONFIG_FILE_PATH")
-)
 
 # 生成或读取API Key
 admin_api_key = AdminKeyManager()

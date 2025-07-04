@@ -20,17 +20,5 @@
                 "Type": "coder"
             }
         ]
-    },
-    {
-        "Name": "Chutes.ai",
-        "ApiKeyEnv": "CHUTES_API_KEY",
-        "URL": "https://llm.chutes.ai/v1",
-        "models": [
-            {
-                "Name": "DeepSeek-Prover-V2-671B",
-                "Id": "deepseek-ai/DeepSeek-Prover-V2-671B",
-                "Type": "prover"
-            }
-        ]
     }
 ]

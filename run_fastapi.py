@@ -37,6 +37,7 @@ from loguru import logger
 
 # ==== 自定义库 ==== #
 from ConfigManager import ConfigLoader
+# 一定要提前加载，否则其他模块会无法获取配置内容
 configs = ConfigLoader(
     config_file_path = env.path("CONFIG_FILE_PATH", "./configs/project_config.json")
 )

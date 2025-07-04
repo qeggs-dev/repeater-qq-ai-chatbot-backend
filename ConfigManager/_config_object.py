@@ -3,8 +3,6 @@ from typing import Any, Callable, TypeVar
 from enum import Enum
 from copy import deepcopy
 from pathlib import Path
-import traceback
-from loguru import logger
 
 
 T = TypeVar('T')
@@ -25,17 +23,6 @@ class ConfigObject:
             return f"<ConfigObject: \"{self.name}\" = {repr(self._values[self._now_index])}>"
         else:
             return f"<ConfigObject: \"{self.name}\" = None>"
-        
-    def _get_caller_name(self):
-        stack = traceback.extract_stack()
-        if len(stack) > 2:
-            caller = stack[-3]
-        return {
-            "name": caller.name,
-            "filename": caller.filename,
-            "linelo": caller.lineno
-        }
-
     @property
     def value_type(self) -> type:
         """

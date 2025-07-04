@@ -2,27 +2,32 @@ import asyncio
 import aiofiles
 import orjson
 import copy
-from environs import Env
 from loguru import logger
 from pathlib import Path
 from typing import List, AsyncIterator
 from ._CallLogObject import CallLogObject, CallAPILogObject
+from ConfigManager import ConfigLoader
 
-_env = Env()
+configs = ConfigLoader()
 
 class CallLogManager:
-    def __init__(self, log_file: Path, debonce_save_wait_time: float | None = None, max_cache_size: int | None = None):
+    def __init__(
+            self,
+            log_file: Path,
+            debonce_save_wait_time: float | None = None,
+            max_cache_size: int | None = None
+        ):
         # 日志缓存列表
         self.log_list: List[CallLogObject | CallAPILogObject] = []
 
         # 防抖保存等待时间
         if debonce_save_wait_time is None:
-            debonce_save_wait_time = _env.float("CALLLOG_DEBONCE_SAVE_WAIT_TIME", 1200.0)
+            debonce_save_wait_time = configs.get_config("Calllog_Debonce_Save_Wait_Time", 1200.0).get_value(float)
         self.debonce_save_wait_time:float = debonce_save_wait_time
 
         # 最大缓存大小
         if max_cache_size is None:
-            max_cache_size = _env.int("CALLLOG_MAX_CACHE_SIZE", 1000)
+            max_cache_size = configs.get_config("Calllog_Max_Cache_Size", 1000).get_value(int)
         self.max_cache_size = max_cache_size
 
         # 日志文件路径

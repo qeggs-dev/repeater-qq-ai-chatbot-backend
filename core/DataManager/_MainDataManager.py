@@ -1,39 +1,31 @@
-from environs import Env
+from ConfigManager import ConfigLoader
 from .UserDataManager import MainManager as UserDataManager
 
-_env = Env()
+configs = ConfigLoader()
 
-_sub_dir_name:str = _env.str("USER_DATA_SUB_DIR_NAME", "ParallelData")
-_cache_metadata:bool = _env.bool("USER_DATA_CACHE_METADATA", False)
-_cache_data:bool = _env.bool("USER_DATA_CACHE_DATA", False)
+_sub_dir_name:str = configs.get_config("User_Data_Sub_Dir_Name", "ParallelData").get_value(str)
+_cache_metadata:bool = configs.get_config("User_Data_Cache_Metadata", False).get_value(bool)
+_cache_data:bool = configs.get_config("User_Data_Cache_Data", False).get_value(bool)
 
-class ContextManager(UserDataManager):
-    def __init__(self):
-        self.base_name = 'Context_UserData'
+
+class _baseManager(UserDataManager):
+    def __init__(self, base_name: str):
+        self.base_name = base_name if base_name else "UserData"
         super().__init__(
             base_name = self.base_name,
-            cache_metadata = _env.bool(f"{self.base_name.upper()}_CACHE_METADATA", _cache_metadata),
-            cache_data = _env.bool(f"{self.base_name.upper()}_CACHE_DATA", _cache_data),
+            cache_metadata = configs.get_config(f"{self.base_name}_Cache_Metadata", _cache_metadata).get_value(bool),
+            cache_data = configs.get_config(f"{self.base_name}_Cache_Data", _cache_data).get_value(bool),
             sub_dir_name = _sub_dir_name
         )
 
-class PromptManager(UserDataManager):
+class ContextManager(_baseManager):
     def __init__(self):
-        self.base_name = 'Prompt_UserData'
-        super().__init__(
-            base_name = self.base_name,
-            cache_metadata = _env.bool(f"{self.base_name.upper()}_CACHE_METADATA", _cache_metadata),
-            cache_data = _env.bool(f"{self.base_name.upper()}_CACHE_DATA", _cache_data),
+        super().__init__('Context_UserData')
 
-            sub_dir_name = _sub_dir_name
-        )
-
-class UserConfigManager(UserDataManager):
+class PromptManager(_baseManager):
     def __init__(self):
-        self.base_name = 'UserConfig_UserData'
-        super().__init__(
-            base_name = self.base_name,
-            cache_metadata = _env.bool(f"{self.base_name.upper()}_CACHE_METADATA", _cache_metadata),
-            cache_data = _env.bool(f"{self.base_name.upper()}_CACHE_DATA", _cache_data),
-            sub_dir_name = _sub_dir_name
-        )
+        super().__init__('Prompt_UserData')
+
+class UserConfigManager(_baseManager):
+    def __init__(self):
+        super().__init__('UserConfig_UserData')

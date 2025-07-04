@@ -15,15 +15,37 @@ class ConfigLoader:
     """
     This class is used to automatically manage configuration information for the entire project.
     """
+    _golbal_config: dict[str, ConfigObject] = {}
 
-    def __init__(self, strictly_case_sensitive: bool = False):
+    def __init__(
+            self,
+            config_file_path: str | Path | None = None,
+            strictly_case_sensitive: bool = False,
+            use_global: bool = True
+        ):
+        self._use_global = use_global
         self._config: dict[str, ConfigObject] = {}
         self._config_sync_lock = threading.Lock()
         self._config_async_lock = asyncio.Lock()
 
         self._strictly_case_sensitive = strictly_case_sensitive
 
-    async def load_config_async(self, file_path: str):
+        if config_file_path is not None:
+            self._config_file_path = Path(config_file_path)
+            self.load_config(config_file_path)
+        else:
+            self._config_file_path = None
+    
+    @property
+    def _get_config(self) -> dict[str, ConfigObject]:
+        if self._use_global:
+            return self._golbal_config
+        return self._config
+    
+    def __repr__(self) -> str:
+        return f"<ConfigLoader Length={len(self._get_config)}>"
+
+    async def load_config_async(self, file_path: str | Path):
         """
         This method is used to load configuration information from a file.
         :param file_path: The file path of the configuration file.
@@ -35,7 +57,7 @@ class ConfigLoader:
             config:list[dict[str, Any]] = orjson.loads(config)
             await asyncio.to_thread(self._decode_config(config))
     
-    def load_config(self, file_path: str):
+    def load_config(self, file_path: str | Path):
         """
         This method is used to load configuration information from a file.
         :param file_path: The file path of the configuration file.
@@ -55,6 +77,7 @@ class ConfigLoader:
         if not isinstance(config_list, list):
             raise TypeError("Config must be a list.")
         system = platform.system().lower()
+        configs = self._get_config
         for item in reversed(config_list):
             try:
                 config_model = Config_Model(**item)
@@ -64,8 +87,8 @@ class ConfigLoader:
                 name = config_model.name
             else:
                 name = config_model.name.lower()
-            if name in self._config:
-                config = self._config[name]
+            if name in configs:
+                config = configs[name]
             else:
                 config = ConfigObject(name = name)
 
@@ -80,6 +103,8 @@ class ConfigLoader:
                         "dict": dict
                     }
                     try:
+                        if value_item.value is None:
+                            value = None
                         if type in TYPES:
                             value = TYPES[type](value_item.value)
                         elif type == "bool":
@@ -95,16 +120,17 @@ class ConfigLoader:
                             value = value_item.value
                         config.value = value
                     except (ValueError, TypeError, orjson.JSONDecodeError):
-                        logger.warning(f"The custom configuration data type conversion failed, and an attempt has been made to use the {config.type} type.", user_id = "[System]")
+                        logger.warning(f"The custom configuration data type conversion failed, and an attempt has been made to use the {config.value_type} type.", user_id = "[System]")
                         config.value = value_item.value
             
-            self._config[name] = config
+            configs[name] = config
 
     def get_config(self, name: str, default: Any = None) -> ConfigObject:
+        configs = self._get_config
         if not self._strictly_case_sensitive:
             name = name.lower()
-        if name in self._config:
-            return self._config[name]
+        if name in configs:
+            return configs[name]
         else:
             config = ConfigObject(name = name)
             config.value = default
@@ -112,3 +138,19 @@ class ConfigLoader:
 
     def get_configs(self, names: list[str]) -> dict[str, ConfigObject]:
         return {name: self.get_config(name) for name in names}
+    
+    def add_config(self, name: str, value: Any) -> None:
+        configs = self._get_config
+        if not self._strictly_case_sensitive:
+            name = name.lower()
+        
+        if name in configs:
+            config = configs[name]
+        else:
+            config = ConfigObject(name)
+        config.value = value
+
+        configs[name] = config
+    
+    def __contains__(self, name: str) -> bool:
+        return name in self._get_config

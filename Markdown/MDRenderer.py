@@ -1,11 +1,10 @@
 import markdown
 import imgkit
-from environs import Env
 from pathlib import Path
 from .styles import STYLES
+from ConfigManager import ConfigLoader
 
-# 初始化环境变量
-env = Env()
+configs = ConfigLoader()
 
 # 修改 markdown_to_image 函数
 def markdown_to_image(
@@ -62,7 +61,7 @@ def markdown_to_image(
         default_options.update(options)
     
     # 4. 转换并保存图片
-    config = imgkit.config(wkhtmltoimage=env.str('WKHTMLTOPDF_PATH'))
+    config = imgkit.config(wkhtmltoimage=configs.get_config("wkhtmltoimage_path").get_value(str))
     imgkit.from_string(
         string=full_html,
         output_path=output_path,

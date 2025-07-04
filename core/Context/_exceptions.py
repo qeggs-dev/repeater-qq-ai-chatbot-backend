@@ -17,3 +17,6 @@ class ContextFieldTypeError(ContextSyntaxError):
 
 class ContextInvalidRoleError(ContextSyntaxError):
     pass
+
+class InvalidPromptPathError(ContextManagerException):
+    pass

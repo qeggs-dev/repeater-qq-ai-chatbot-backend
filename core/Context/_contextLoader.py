@@ -11,7 +11,6 @@ import orjson
 
 # ==== 第三方库 ==== #
 from openai import AsyncOpenAI
-from environs import Env
 from loguru import logger
 
 # ==== 自定义库 ==== #
@@ -33,19 +32,20 @@ from TextProcessors import (
     PromptVP,
     limit_blank_lines,
 )
-from sanitizeFilename import sanitize_filename_async
+from PathProcessors import validate_path, sanitize_filename_async
+from ConfigManager import ConfigLoader
 
 # ==== 本模块代码 ==== #
-env = Env()
+configs = ConfigLoader()
 
 class ContextLoader:
     def __init__(
-        self,
-        config: ConfigManager,
-        prompt: PromptManager,
-        context: ContextManager,
-        prompt_vp: PromptVP
-    ):
+            self,
+            config: ConfigManager,
+            prompt: PromptManager,
+            context: ContextManager,
+            prompt_vp: PromptVP
+        ):
         self.config: ConfigManager = config
         self.prompt: PromptManager = prompt
         self.context: ContextManager = context
@@ -59,16 +59,18 @@ class ContextLoader:
             logger.info(f"Load User Prompt", user_id = user_id)
         else:
             # 加载默认提示词
-            default_prompt_dir = env.path("DEFAULT_PROMPT_DIR", Path())
+            default_prompt_dir = configs.get_config("Default_Prompt_Dir", Path()).get_value(Path)
             if default_prompt_dir.exists():
                 # 如果存在默认提示词文件，则加载默认提示词文件
                 config = await self.config.load(user_id)
                 
                 # 获取默认提示词文件名
-                parset_prompt_name = config.get("parset_prompt_name", env.str("PARSET_PROMPT_NAME", "default"))
+                parset_prompt_name = config.get("parset_prompt_name", configs.get_config("parset_prompt_name", "default").get_value(str))
 
                 # 加载默认提示词文件
                 default_prompt_file = default_prompt_dir / f'{await sanitize_filename_async(parset_prompt_name)}.txt'
+                if not validate_path(default_prompt_dir, default_prompt_file):
+                    raise InvalidPromptPathError(f"Invalid Prompt Path: {default_prompt_file}")
                 if default_prompt_file.exists():
                     logger.info(f"Load Default Prompt File: {default_prompt_file}", user_id = user_id)
                     async with aiofiles.open(default_prompt_file, mode="r", encoding="utf-8") as f:
@@ -92,14 +94,14 @@ class ContextLoader:
         return context
 
     async def _append_context(
-        self,
-        context:ContextObject,
-        user_id: str,
-        new_message: str,
-        role: str = 'user',
-        role_name: str | None = None,
-        continue_completion: bool = False
-    ) -> ContextObject:
+            self,
+            context:ContextObject,
+            user_id: str,
+            new_message: str,
+            role: str = 'user',
+            role_name: str | None = None,
+            continue_completion: bool = False
+        ) -> ContextObject:
         """
         添加上下文
 
@@ -133,14 +135,14 @@ class ContextLoader:
         return context
     
     async def load(
-        self,
-        user_id: str,
-        message: str,
-        role: str = 'user',
-        role_name: str | None = None,
-        load_prompt: bool = True,
-        continue_completion: bool = False
-    ) -> ContextObject:
+            self,
+            user_id: str,
+            message: str,
+            role: str = 'user',
+            role_name: str | None = None,
+            load_prompt: bool = True,
+            continue_completion: bool = False
+        ) -> ContextObject:
         """
         加载上下文
 
@@ -184,10 +186,10 @@ class ContextLoader:
         return prompt
 
     async def save(
-        self,
-        user_id: str,
-        context: ContextObject,
-    ) -> None:
+            self,
+            user_id: str,
+            context: ContextObject,
+        ) -> None:
         """
         保存上下文
 

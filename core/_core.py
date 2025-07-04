@@ -10,7 +10,6 @@ import random
 from pathlib import Path
 
 # ==== 第三方库 ==== #
-from environs import Env
 from loguru import logger
 import aiofiles
 import orjson
@@ -35,11 +34,12 @@ from TimeParser import (
     format_timestamp,
     calculate_age
 )
+from ConfigManager import ConfigLoader
 
 # ==== 本模块代码 ==== #
-env = Env()
+configs = ConfigLoader()
 
-__version__ = env.str("VERSION", "4.0.2.1 Beta")
+__version__ = configs.get_config("VERSION", "4.1.0.0").get_value(str)
 
 class Core:
     def __init__(self, max_concurrency: int | None = None):
@@ -61,18 +61,19 @@ class Core:
             version = __version__
         )
         # 初始化Client并设置并发大小
-        self.api_client = CallAPI.Client(env.int('MAX_CONCURRENCY', 10) if max_concurrency is None else max_concurrency)
+        self.api_client = CallAPI.Client(configs.get_config('max_concurrency', 10).get_value(int) if max_concurrency is None else max_concurrency)
 
         # 初始化API信息管理器
         self.apiinfo = ApiInfo()
         # 从指定文件加载API信息
-        self.apiinfo.load(env.path('API_INFO_FILE_PATH'))
+        self.apiinfo.load(configs.get_config("api_info_file_path", "./config/api_info.json").get_value(Path))
 
         # 初始化会话锁池
         self.session_locks = {}
 
         # 初始化调用日志管理器
-        self.calllog = CallLog.CallLogManager(env.path('CALL_LOG_FILE_PATH'))
+        self.calllog = CallLog.CallLogManager(configs.get_config('CALL_LOG_FILE_PATH').get_value(Path))
+
         
         # 添加退出函数
         def _exit():
@@ -80,7 +81,7 @@ class Core:
             退出时执行的任务
             """
             # 保存调用日志
-            if env.bool("SAVE_CALL_LOG", True):
+            if configs.get_config("save_call_log", True).get_value(bool):
                 self.calllog.save_call_log()
         
         # 注册退出函数
@@ -102,12 +103,12 @@ class Core:
     
     # region > get prompt_vp
     async def get_prompt_vp(
-        self,
-        user_id: str,
-        user_name: str = "",
-        model_type: str = "",
-        config: UserConfigManager.Configs = UserConfigManager.Configs(),
-    ) -> PromptVP:
+            self,
+            user_id: str,
+            user_name: str = "",
+            model_type: str = "",
+            config: UserConfigManager.Configs = UserConfigManager.Configs(),
+        ) -> PromptVP:
         """
         获取指定用户的PromptVP实例
 
@@ -117,20 +118,25 @@ class Core:
         :param config: 用户配置
         :return: PromptVP实例
         """
+        bot_birthday_year = configs.get_config("birthday_year").get_value(int)
+        bot_birthday_month = configs.get_config("birthday_month").get_value(int)
+        bot_birthday_day = configs.get_config("birthday_day").get_value(int)
+        timezone = configs.get_config("timezone", 8).get_value(int)
+        bot_name = configs.get_config("bot_name", "Bot").get_value(str)
         return await self.promptvariable.get_prompt_variable(
             user_id = user_id,
             user_name = user_name,
             BirthdayCountdown = lambda **kw: get_birthday_countdown(
-                env.int("BIRTHDAY_MONTH"),
-                env.int("BIRTHDAY_DAY"),
-                name=env.str("BOT_NAME","Bot")
+                bot_birthday_month,
+                bot_birthday_day,
+                name=bot_name
             ),
             model_type = model_type if model_type else config.get("model_type"),
-            botname = env.str("BOT_NAME", "Bot"),
-            birthday = f'{env.int("BIRTHDAY_YEAR")}.{env.int("BIRTHDAY_MONTH")}.{env.int("BIRTHDAY_DAY")}',
-            zodiac = lambda **kw: date_to_zodiac(env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY")),
-            time = lambda **kw: format_timestamp(time.time(), config.get("timezone", env.int("TIMEZONE_OFFSET", default=8)), '%Y-%m-%d %H:%M:%S %Z'),
-            age = lambda **kw: calculate_age(env.int("BIRTHDAY_YEAR"), env.int("BIRTHDAY_MONTH"), env.int("BIRTHDAY_DAY"), offset_timezone = config.get("timezone", env.int("TIMEZONE_OFFSET", default=8))),
+            botname = bot_name,
+            birthday = f'{bot_birthday_year}.{bot_birthday_month}.{bot_birthday_day}',
+            zodiac = lambda **kw: date_to_zodiac(bot_birthday_month, bot_birthday_day),
+            time = lambda **kw: format_timestamp(time.time(), config.get("timezone", timezone), '%Y-%m-%d %H:%M:%S %Z'),
+            age = lambda **kw: calculate_age(bot_birthday_year, bot_birthday_month, bot_birthday_day, offset_timezone = config.get("timezone", timezone)),
             random = lambda min, max: random.randint(int(min), int(max)),
             randfloat = lambda min, max: random.uniform(float(min), float(max)),
             randchoice = lambda *args: random.choice(args)
@@ -145,10 +151,11 @@ class Core:
         :param user_name: 用户名
         :return: 昵称
         """
-        unm_path = env.path('USER_NICKNAME_MAPPING_FILE_PATH', Path())
+        user_nickname_mapping_file_path = configs.get_config("user_nickname_mapping_file_path", "./config/user_nickname_mapping.json").get_value(Path)
+        unm_path = user_nickname_mapping_file_path
         if not unm_path.exists():
             return user_name
-        async with aiofiles.open(env.path('USER_NICKNAME_MAPPING_FILE_PATH'), 'rb') as f:
+        async with aiofiles.open(user_nickname_mapping_file_path, 'rb') as f:
             fdata = await f.read()
             try:
                 nickname_mapping = orjson.loads(fdata)
@@ -178,12 +185,12 @@ class Core:
 
     # region > get context
     async def get_context_loader(
-        self,
-        user_id: str,
-        user_name: str,
-        model_type: str = env.str("DEFAULT_MODEL_TYPE", "chat"),
-        user_config: dict = {},
-    ) -> Context.ContextLoader:
+            self,
+            user_id: str,
+            user_name: str,
+            model_type: str = configs.get_config("default_model_type", "chat").get_value(str),
+            user_config: dict = {},
+        ) -> Context.ContextLoader:
         """
         加载上下文
         :param user_id: 用户ID
@@ -206,17 +213,17 @@ class Core:
         return context_loader
     
     async def get_context(
-        self,
-        context_loader: Context.ContextLoader,
-        user_id: str,
-        message: str,
-        user_name: str,
-        role: str = 'user',
-        role_name: str | None = None,
-        load_prompt: bool = True,
-        continue_completion: bool = False,
-        reference_context_id: str | None = None
-    ) -> Context.ContextObject:
+            self,
+            context_loader: Context.ContextLoader,
+            user_id: str,
+            message: str,
+            user_name: str,
+            role: str = 'user',
+            role_name: str | None = None,
+            load_prompt: bool = True,
+            continue_completion: bool = False,
+            reference_context_id: str | None = None
+        ) -> Context.ContextObject:
         """
         获取上下文
         :param context_loader: 上下文加载器
@@ -251,19 +258,19 @@ class Core:
         return context
     # region > Chat
     async def Chat(
-        self,
-        message: str,
-        user_id: str,
-        user_name: str,
-        role: str = "user",
-        role_name:  str = "",
-        model_type: str | None = None,
-        load_prompt: bool = True,
-        print_chunk: bool = True,
-        save_context: bool = True,
-        reference_context_id: str | None = None,
-        continue_completion: bool = False,
-    ) -> dict[str, str]:
+            self,
+            message: str,
+            user_id: str,
+            user_name: str,
+            role: str = "user",
+            role_name:  str = "",
+            model_type: str | None = None,
+            load_prompt: bool = True,
+            print_chunk: bool = True,
+            save_context: bool = True,
+            reference_context_id: str | None = None,
+            continue_completion: bool = False,
+        ) -> dict[str, str]:
         """
         与模型对话
 
@@ -299,7 +306,7 @@ class Core:
             
             # 获取模型类型
             if not model_type:
-                model_type = config.get("model_type", env.str("DEFAULT_MODEL_TYPE", "chat"))
+                model_type = config.get("model_type", configs.get_config("default_model_type", "chat").get_value(str))
 
             # 获取上下文加载器
             context_loader = await self.get_context_loader(
@@ -352,14 +359,14 @@ class Core:
 
             # 设置请求对象的参数信息
             request.user_name = user_name
-            request.temperature = config.get("temperature", env.float("DEFAULT_TEMPERATURE", default=None))
-            request.top_p = config.get("top_p", env.float("DEFAULT_TOP_P", default=None))
-            request.max_tokens = config.get("max_tokens", env.int("DEFAULT_MAX_TOKENS", default=None))
-            request.max_completion_tokens = config.get("max_completion_tokens", env.int("DEFAULT_MAX_COMPLETION_TOKENS", default=None))
-            request.stop = config.get("stop", None)
-            request.stream = env.bool("STREAM", True)
-            request.frequency_penalty = config.get("frequency_penalty", env.float("DEFAULT_FREQUENCY_PENALTY", default=None))
-            request.presence_penalty = config.get("presence_penalty", env.float("DEFAULT_PRESENCE_PENALTY", default=None))
+            request.temperature = config.get("temperature", configs.get_config("default_temperature", 1.0).get_value(float))
+            request.top_p = config.get("top_p", configs.get_config("default_top_p", 1.0).get_value(float))
+            request.max_tokens = config.get("max_tokens", configs.get_config("default_max_tokens", 4096).get_value(int))
+            request.max_completion_tokens = config.get("max_completion_tokens", configs.get_config("default_max_completion_tokens", 4096).get_value(int))
+            request.stop = config.get("stop", configs.get_config("default_stop", None).get_value((list, None)))
+            request.stream = configs.get_config("stream", True).get_value(bool)
+            request.frequency_penalty = config.get("frequency_penalty", configs.get_config("default_frequency_penalty", 0.0).get_value(float))
+            request.presence_penalty = config.get("presence_penalty", configs.get_config("default_presence_penalty", 0.0).get_value(float))
             request.print_chunk = print_chunk
 
             # 记录预处理结束时间
@@ -426,7 +433,7 @@ class Core:
 
     # region > 重新加载API信息
     async def reload_apiinfo(self):
-        await self.apiinfo.load_async(env.path('API_INFO_FILE_PATH'))
+        await self.apiinfo.load_async(configs.get_config("api_info_file_path", "./config/api_info.json").get_value(Path))
     # endregion
 
     # region > 加载指定API INFO文件

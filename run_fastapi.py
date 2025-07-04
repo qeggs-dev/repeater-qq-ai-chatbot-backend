@@ -41,6 +41,7 @@ from core import (
 from core.CallLog import CallAPILog
 from Markdown import markdown_to_image, STYLES as MARKDOWN_STYLES
 from admin_apikey_manager import AdminKeyManager
+from ConfigManager import ConfigLoader
 # endregion
 
 # region Global Objects
@@ -50,6 +51,10 @@ env = Env()
 env.read_env()
 
 chat = Core()
+
+configs = ConfigLoader(
+    config_file_path = env.path("CONFIG_FILE_PATH")
+)
 
 # 生成或读取API Key
 admin_api_key = AdminKeyManager()
@@ -74,7 +79,7 @@ def validate_path(base_path: str | Path, user_path: str | Path) -> bool:
 # region Readme
 @app.get("/readme.md")
 async def readme():
-    readme_path = env.path("README_FILE_PATH", "README.md")
+    readme_path = configs.get_config("readme_path", "./README.md").get_value(Path)
     if not readme_path.exists():
         raise HTTPException(status_code=404, detail="README.md not found")
     return FileResponse(readme_path, media_type="text/markdown")
@@ -85,18 +90,20 @@ async def static(path: str):
     """
     Endpoint for serving static files
     """
-    if not (env.path("STATIC_DIR") / f"{path}.png").exists():
+    static_dir = configs.get_config("static_dir", "./static").get_value(Path)
+    if not (static_dir / f"{path}.png").exists():
         raise HTTPException(detail="File not found", status_code=404)
-    return FileResponse(env.path("STATIC_DIR") / path)
+    return FileResponse(static_dir / path)
 
 @app.get("/favicon.ico")
 async def favicon():
     """
     Endpoint for serving favicon
     """
-    if not (env.path("STATIC_DIR") / "favicon.ico").exists():
+    static_dir = configs.get_config("static_dir", "./static").get_value(Path)
+    if not (static_dir / "favicon.ico").exists():
         raise HTTPException(detail="File not found", status_code=404)
-    return FileResponse(env.path("STATIC_DIR") / "favicon.ico")
+    return FileResponse(static_dir / "favicon.ico")
 
 # region Chat
 @app.post("/chat/completion/{user_id}")
@@ -152,6 +159,7 @@ async def render(
     # 生成图片ID
     fuuid = uuid4()
     filename = f"{fuuid}.png"
+    rendered_image_dir = configs.get_config("rendered_image_dir", "./temp/render").get_value(Path)
 
     # 延迟删除函数
     async def _wait_delete(sleep_time: int, filename: str):
@@ -162,7 +170,7 @@ async def render(
             """
             删除图片
             """
-            await asyncio.to_thread(os.remove, env.path("RENDERED_IMAGE_DIR") / filename)
+            await asyncio.to_thread(os.remove, rendered_image_dir / filename)
             logger.info(f'Deleted image {filename}', user_id = user_id)
         
         try:
@@ -179,12 +187,12 @@ async def render(
         # 获取用户配置
         config = await chat.user_config_manager.load(user_id)
         # 获取环境变量中的图片渲染风格
-        default_style = env.str("MARKDOWN_TO_IMAGE_STYLE", "light")
+        default_style = configs.get_config("markdown_to_image_style", "light").get_value(str)
         # 获取图片渲染风格
         style = config.get('render_style', default_style)
     
     if not timeout:
-        timeout = env.int("RENDERED_DEFAULT_IMAGE_TIMEOUT", 60)
+        timeout = configs.get_config("rendered_default_image_timeout", 60.0).get_value(float)
     
     # 日志打印文件名和渲染风格
     logger.info(f'Rendering image {filename} for "{style}" style', user_id=user_id)
@@ -193,7 +201,7 @@ async def render(
     await asyncio.to_thread(
         markdown_to_image,
         markdown_text = text,
-        output_path = env.path("RENDERED_IMAGE_DIR") / filename,
+        output_path = rendered_image_dir / filename,
         style = style
     )
     create_ms = time.time_ns() // 10**6
@@ -657,12 +665,13 @@ async def render_file(file_uuid: str):
     """
     Endpoint for rendering file
     """
+    rendered_image_dir = configs.get_config("rendered_image_dir", "./temp/render").get_value(Path)
     # 检查文件是否存在
-    if not (env.path("RENDERED_IMAGE_DIR") / f"{file_uuid}.png").exists():
+    if not (rendered_image_dir / f"{file_uuid}.png").exists():
         raise HTTPException(detail="File not found", status_code=404)
     
     # 返回文件
-    return FileResponse(env.path("RENDERED_IMAGE_DIR") / f"{file_uuid}.png")
+    return FileResponse(rendered_image_dir / f"{file_uuid}.png")
 # endregion
 
 # region Admin API
@@ -689,11 +698,22 @@ async def regenerate_admin_key(api_key: str = Header(..., alias="X-Admin-API-Key
     admin_api_key.generate()
 # endregion
 
-
-if __name__ == "__main__":
+def main():
     import uvicorn
+    host = "0.0.0.0" # 默认监听所有地址
+    port = 8000 # 默认监听8000端口
+
+    host = env.str("HOST", host)
+    port = env.int("PORT", port)
+
+    host = configs.get_config("server.host", host).get_value(str)
+    port = configs.get_config("server.port", port).get_value(int)
+
     uvicorn.run(
         app = app,
-        host = env.str("HOST", "0.0.0.0"), # 默认监听所有地址
-        port = env.int("PORT", 8000) # 默认监听8000端口
+        host = host,
+        port = port
     )
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,366 @@
+[
+    {
+        "name": "API_INFO_FILE_PATH",
+        "values": [
+            {
+                "type": "path",
+                "value": "./config/apiconfig.json"
+            }
+        ]
+    },
+    {
+        "name": "CALL_LOG_FILE_PATH",
+        "values": [
+            {
+                "type": "path",
+                "value": "./config/calllog.jsonl"
+            }
+        ]
+    },
+    {
+        "name": "RENDERED_IMAGE_DIR",
+        "values": [
+            {
+                "type": "path",
+                "value": "./temp/render"
+            }
+        ]
+    },
+    {
+        "name": "STATIC_DIR",
+        "values": [
+            {
+                "type": "path",
+                "value": "./static"
+            }
+        ]
+    },
+    {
+        "name": "USER_DATA_DIR",
+        "values": [
+            {
+                "type": "path",
+                "value": "./data/userdata"
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_MODEL_TYPE",
+        "values": [
+            {
+                "type": "str",
+                "value": "chat"
+            }
+        ]
+    },
+    {
+        "name": "WKHTMLTOPDF_PATH",
+        "values": [
+            {
+                "type": "path",
+                "system": "Windows",
+                "value": "C:\\Program Files\\wkhtmltopdf\\bin\\wkhtmltopdf.exe"
+            },
+            {
+                "type": "path",
+                "system": "Linux",
+                "value": "/usr/local/bin/wkhtmltopdf"
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_OUTPUT_DPI",
+        "values": [
+            {
+                "type": "int",
+                "value": 150
+            }
+        ]
+    },
+    {
+        "name": "BOT_NAME",
+        "values": [
+            {
+                "type": "str",
+                "value": "复读机"
+            }
+        ]
+    },
+    {
+        "name": "BIRTHDAY_YEAR",
+        "values": [
+            {
+                "type": "int",
+                "value": 2024
+            }
+        ]
+    },
+    {
+        "name": "BIRTHDAY_MONTH",
+        "values": [
+            {
+                "type": "int",
+                "value": 6
+            }
+        ]
+    },
+    {
+        "name": "BIRTHDAY_DAY",
+        "values": [
+            {
+                "type": "int",
+                "value": 28
+            }
+        ]
+    },
+    {
+        "name": "SAVE_CALL_LOG",
+        "values": [
+            {
+                "type": "bool",
+                "value": true
+            }
+        ]
+    },
+    {
+        "name": "README_FILE_PATH",
+        "values": [
+            {
+                "type": "str",
+                "value": "./README.md"
+            }
+        ]
+    },
+    {
+        "name": "RENDERED_DEFAULT_IMAGE_TIMEOUT",
+        "values": [
+            {
+                "type": "int",
+                "value": 60
+            }
+        ]
+    },
+    {
+        "name": "MAX_CONCURRENCY",
+        "values": [
+            {
+                "type": "int",
+                "value": 1000
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_PROMPT_DIR",
+        "values": [
+            {
+                "type": "str",
+                "value": "./PresetsPrompt"
+            }
+        ]
+    },
+    {
+        "name": "PARSET_PROMPT_NAME",
+        "values": [
+            {
+                "type": "str",
+                "value": "default"
+            }
+        ]
+    },
+    {
+        "name": "USER_DATA_SUB_DIR_NAME",
+        "values": [
+            {
+                "type": "str",
+                "value": "ParallelData"
+            }
+        ]
+    },
+    {
+        "name": "USER_DATA_METADATA_FILENAME",
+        "values": [
+            {
+                "type": "str",
+                "value": "metadata.json"
+            }
+        ]
+    },
+    {
+        "name": "USER_DATA_CACHE_METADATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "CONTEXT_USERDATA_CACHE_METADATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "PROMPT_USERDATA_CACHE_METADATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "USERCONFIG_USERDATA_CACHE_METADATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": true
+            }
+        ]
+    },
+    {
+        "name": "USER_DATA_CACHE_DATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "CONTEXT_USERDATA_CACHE_DATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "PROMPT_USERDATA_CACHE_DATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": false
+            }
+        ]
+    },
+    {
+        "name": "USERCONFIG_USERDATA_CACHE_DATA",
+        "values": [
+            {
+                "name": "bool",
+                "value": true
+            }
+        ]
+    },
+    {
+        "name": "CONFIG_CACHE_DOWNGRADE_WAIT_TIME",
+        "values": [
+            {
+                "type": "int",
+                "value": 600
+            }
+        ]
+    },
+    {
+        "name": "CONFIG_CACHE_DEBONCE_SAVE_WAIT_TIME",
+        "values": [
+            {
+                "type": "int",
+                "value": 600
+            }
+        ]
+    },
+    {
+        "name": "USER_NICKNAME_MAPPING_FILE_PATH",
+        "values": [
+            {
+                "type": "path",
+                "value": "./config/UserNicknameMapping.json"
+            }
+        ]
+    },
+    {
+        "name": "TIMEZONE_OFFSET",
+        "values": [
+            {
+                "type": "int",
+                "value": 8
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_TEMPERATURE",
+        "values": [
+            {
+                "type": "float",
+                "value": 1.0
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_TOP_P",
+        "values": [
+            {
+                "type": "float",
+                "value": 0.9
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_FREQUENCY_PENALTY",
+        "values": [
+            {
+                "type": "float",
+                "value": 0.0
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_PRESENCE_PENALTY",
+        "values": [
+            {
+                "type": "float",
+                "value": 0.0
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_MAX_TOKENS",
+        "values": [
+            {
+                "value": null
+            }
+        ]
+    },
+    {
+        "name": "DEFAULT_MAX_COMPLETION_TOKENS",
+        "values": [
+            {
+                "value": null
+            }
+        ]
+    },
+    {
+        "name": "CALLLOG_DEBONCE_SAVE_WAIT_TIME",
+        "values": [
+            {
+                "type": "int",
+                "value": 1200
+            }
+        ]
+    },
+    {
+        "name": "CALLLOG_MAX_CACHE_SIZE",
+        "values": [
+            {
+                "type": "int",
+                "value": 1000
+            }
+        ]
+    }
+]

@@ -1,19 +1,21 @@
 # ==== 标准库 ==== #
 from typing import Any
-
-# ==== 第三方库 ==== #
-from environs import Env
+from pathlib import Path
 
 # ==== 自定义库 ==== #
 from .SubManager import SubManager
-from SanitizeFilename import sanitize_filename, sanitize_filename_async
+from PathProcessors import validate_path, sanitize_filename, sanitize_filename_async
+from ConfigManager import ConfigLoader
 from .._user_mainmanager_interface import UserMainManagerInterface
 
-env = Env()
+configs = ConfigLoader()
 
 class MainManager(UserMainManagerInterface):
     def __init__(self, base_name: str, cache_metadata:bool = False, cache_data:bool = False, sub_dir_name:str = "ParallelData"):
-        self.base_name = sanitize_filename(base_name)
+        self._base_path = configs.get_config("User_Data_Dir", "./userdata").get_value(Path)
+        self._base_name = sanitize_filename(base_name)
+        if not validate_path(self._base_path, self._base_name):
+            raise ValueError("Invalid path for user data directory")
         self.sub_managers:dict[str, SubManager] = {}
 
         self.cache_metadata = cache_metadata
@@ -21,12 +23,16 @@ class MainManager(UserMainManagerInterface):
 
         self.sub_dir_name = sub_dir_name
     
+    @property
+    def base_path(self):
+        return self._base_path / self._base_name
+    
     async def load(self, user_id: str, default: Any = None) -> Any:
         user_id = await sanitize_filename_async(user_id)
         manager = self.sub_managers.setdefault(
             user_id,
             SubManager(
-                env.path('USER_DATA_DIR') / self.base_name / user_id,
+                self.base_path / user_id,
                 sub_dir_name = self.sub_dir_name,
                 cache_metadata = self.cache_metadata,
                 cache_data = self.cache_data
@@ -44,7 +50,7 @@ class MainManager(UserMainManagerInterface):
         manager = self.sub_managers.setdefault(
             user_id,
             SubManager(
-                env.path('USER_DATA_DIR') / self.base_name / user_id,
+                self.base_path / user_id,
                 sub_dir_name = self.sub_dir_name,
                 cache_metadata = self.cache_metadata,
                 cache_data = self.cache_data
@@ -62,7 +68,7 @@ class MainManager(UserMainManagerInterface):
         manager = self.sub_managers.setdefault(
             user_id,
             SubManager(
-                env.path('USER_DATA_DIR') / self.base_name / user_id,
+                self.base_path / user_id,
                 sub_dir_name = self.sub_dir_name,
                 cache_metadata = self.cache_metadata,
                 cache_data=self.cache_data
@@ -80,7 +86,7 @@ class MainManager(UserMainManagerInterface):
         manager = self.sub_managers.setdefault(
             user_id,
             SubManager(
-                env.path('USER_DATA_DIR') / self.base_name / user_id,
+                self.base_path / user_id,
                 sub_dir_name = self.sub_dir_name,
                 cache_metadata = self.cache_metadata,
                 cache_data = self.cache_data
@@ -98,7 +104,7 @@ class MainManager(UserMainManagerInterface):
         manager = self.sub_managers.setdefault(
             user_id,
             SubManager(
-                env.path('USER_DATA_DIR') / self.base_name / user_id,
+                self.base_path / user_id,
                 sub_dir_name = self.sub_dir_name,
                 cache_metadata = self.cache_metadata,
                 cache_data = self.cache_data
@@ -111,7 +117,7 @@ class MainManager(UserMainManagerInterface):
             return 'default'
 
     async def get_all_user_id(self) -> list:
-        return [f.name for f in (env.path('USER_DATA_DIR') / self.base_name).iterdir() if f.is_dir()]
+        return [f.name for f in (self.base_path).iterdir() if f.is_dir()]
 
     async def get_all_item_id(self, user_id: str) -> list:
-        return [f.stem for f in (env.path('USER_DATA_DIR') / self.base_name / user_id / self.sub_dir_name).iterdir() if f.is_file()]
+        return [f.stem for f in (self.base_path / user_id / self.sub_dir_name).iterdir() if f.is_file()]

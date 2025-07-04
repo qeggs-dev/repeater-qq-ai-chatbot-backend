@@ -1,10 +1,12 @@
 import asyncio
-from environs import Env
 from typing import Any
 from loguru import logger
 from ..DataManager import UserConfigManager
 from ._exceptions import *
 from ._object import Configs
+from ConfigManager import ConfigLoader
+
+configs = ConfigLoader()
 
 class ConfigManager:
     # 用户配置管理器 (定义为类属性以减少重复实例化)
@@ -12,26 +14,24 @@ class ConfigManager:
 
     # 全局配置缓存
     _global_config_cache:dict[str, Configs] = {}
-
-    _env = Env()
     
     def __init__(
-        self,
-        cache: bool = True,
-        use_global_cache: bool = False,
-        downgrade_wait_time: float | None = None,
-        debonce_save_wait_time: float | None = None
-    ):
+            self,
+            cache: bool = True,
+            use_global_cache: bool = False,
+            downgrade_wait_time: float | None = None,
+            debonce_save_wait_time: float | None = None
+        ):
         self._cache:dict[str, Configs] = {}
 
         self._cache_switch = cache
         self._use_global_cache = use_global_cache
 
         self._downgrade_tasks: dict[str, asyncio.Task] = {}
-        self._downgrade_wait_time: float = downgrade_wait_time or self._env.float("CONFIG_CACHE_DOWNGRADE_WAIT_TIME", 600.0)
+        self._downgrade_wait_time: float = downgrade_wait_time or configs.get_config("Config_Cache_Downgrade_Wait_Time", 600.0).get_value(float)
 
         self._debonce_save_tasks: dict[str, asyncio.Task] = {}
-        self._debonce_save_wait_time: float = debonce_save_wait_time or self._env.float("CONFIG_CACHE_DEBONCE_SAVE_WAIT_TIME", 600.0)
+        self._debonce_save_wait_time: float = debonce_save_wait_time or configs.get_config("Config_Cache_Debonce_Save_Wait_Time", 600.0).get_value(float)
 
         self._lock = asyncio.Lock()
 

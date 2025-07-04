@@ -8,15 +8,14 @@ from pathlib import Path
 # ==== 第三方库 ==== #
 import orjson
 import aiofiles
-from environs import Env
 
 # ==== 项目库 ==== #
-from SanitizeFilename import sanitize_filename, sanitize_filename_async
-from PathProcessors import validate_path
+from PathProcessors import validate_path, sanitize_filename, sanitize_filename_async
+from ConfigManager import ConfigLoader
 
 class SubManager:
-    _env = Env()
-    _metadata_filename = _env.str("USER_DATA_METADATA_FILENAME", "metadata.json")
+    _configs = ConfigLoader()
+    _metadata_filename = _configs.get_config("User_Data_Metadata_Filename", "metadata.json").get_value(str)
 
     def __init__(self, base_path: Path, sub_dir_name: str, cache_metadata:bool = False, cache_data:bool = False):
         self.base_path: Path = base_path

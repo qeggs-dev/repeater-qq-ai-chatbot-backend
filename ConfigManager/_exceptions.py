@@ -15,4 +15,5 @@ class ConfigSyntaxError(ConfigError):
         self.errors = errors
     
     def __str__(self):
-        return f"{self.message} {self.errors}"
+        import json
+        return f"{self.message} {json.dumps(self.errors, indent=4, ensure_ascii=False)}"

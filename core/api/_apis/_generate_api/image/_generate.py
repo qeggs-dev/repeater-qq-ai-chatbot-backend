@@ -1,11 +1,10 @@
 import orjson
 from typing import AsyncGenerator
 
-from core.call_api.image.generate._objects._completed_image_event import CompletedImageEvent
-from core.call_api.image.generate._objects._partial_image_event import PartialImageEvent
-
-from .....call_api.image import (
-    ImageGenerateCaller,
+from .....call_api import (
+    CompletedImageEvent,
+    PartialImageEvent,
+    ImageGenerateClient,
     ImagesRequest as ImagesRequest,
     ImagesRuntime,
     ImagesResponse
@@ -47,7 +46,7 @@ async def generate_image(
     )
 
     openai_pool = runtime.openai_pool
-    image_generate_caller = ImageGenerateCaller(
+    image_generate_client = ImageGenerateClient(
         max_concurrency = 1000
     )
 
@@ -73,6 +72,7 @@ async def generate_image(
         headers = header,
         timeout = model.timeout,
 
+        images = request.images,
         prompt = request.prompt,
         background = request.background,
         moderation = request.moderation,
@@ -92,7 +92,7 @@ async def generate_image(
         client_pool = openai_pool
     )
 
-    result: AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse = await image_generate_caller.call(
+    result: AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse = await image_generate_client.call(
         image_request,
         image_runtime
     )

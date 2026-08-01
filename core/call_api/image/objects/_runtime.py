@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from .....pools.openai_pool import OpenAIPool
+from ....pools.openai_pool import OpenAIPool
 
 @dataclass
 class ImagesRuntime:

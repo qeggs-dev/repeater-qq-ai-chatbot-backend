@@ -9,6 +9,12 @@ from .size import ImageSize
 from .stream_usage import StreamUsage
 from .style import ImageStyle
 from .token_usage import ImageTokenUsage
+from .files import (
+    PathFile,
+    UrlFile,
+    Base64File,
+    FILE_TYPES
+)
 
 __all__ = [
     "Background",
@@ -22,4 +28,8 @@ __all__ = [
     "StreamUsage",
     "ImageStyle",
     "ImageTokenUsage",
+    "PathFile",
+    "UrlFile",
+    "Base64File",
+    "FILE_TYPES"
 ]

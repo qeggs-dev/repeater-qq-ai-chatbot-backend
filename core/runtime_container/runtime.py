@@ -13,9 +13,6 @@ from ..data_manager import (
     ContextManager,
     PromptManager
 )
-from ..call_api.image import (
-    ImageGenerateCaller
-)
 from ..user_config_manager import (
     ConfigManager as UserConfigManager
 )

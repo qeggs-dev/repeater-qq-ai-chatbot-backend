@@ -8,8 +8,9 @@ from .auxiliary import (
     ImageResponseFormat,
     ImageSize,
     ImageStyle,
+    FILE_TYPES
 )
-from .....auxiliary.http import (
+from ....auxiliary.http import (
     ClientLimits,
     ClientTimeout
 )
@@ -33,6 +34,7 @@ class ImagesRequest(BaseModel):
     model_uid: str = ""
     key: str = ""
     
+    images: list[FILE_TYPES] | None = None
     prompt: str = Field(...)
     background: Background | None = None
     moderation: Moderation | None = None

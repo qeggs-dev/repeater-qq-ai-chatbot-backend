@@ -1,10 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
-from typing import Any
-
-from .....auxiliary.http import (
-    ClientLimits,
-    ClientTimeout
-)
+from pydantic import BaseModel, ConfigDict
 from .....call_api.image import (
     Background,
     Moderation,
@@ -13,6 +7,7 @@ from .....call_api.image import (
     ImageResponseFormat,
     ImageSize,
     ImageStyle,
+    FILE_TYPES
 )
 
 class Request(BaseModel):
@@ -21,6 +16,7 @@ class Request(BaseModel):
     )
     
     model_id: str | list[str] | None = None
+    images: list[FILE_TYPES] | None = None
     prompt: str = ""
     
     background: Background | None = None

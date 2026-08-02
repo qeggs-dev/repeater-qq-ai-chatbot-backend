@@ -16,6 +16,12 @@ from .auxiliary.token_usage import (
     ImageTokenUsage,
     ImageUsageTokensDetails
 )
+from .auxiliary.files import (
+    PathFile,
+    UrlFile,
+    Base64File,
+    FILE_TYPES
+)
 
 __all__ = [
     "ImagesRequest",
@@ -32,5 +38,9 @@ __all__ = [
     "ImageStyle",
     "Image",
     "ImageTokenUsage",
-    "ImageUsageTokensDetails"
+    "ImageUsageTokensDetails",
+    "PathFile",
+    "UrlFile",
+    "Base64File",
+    "FILE_TYPES"
 ]

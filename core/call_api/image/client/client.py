@@ -1,5 +1,7 @@
 from typing import (
     Any,
+    Callable,
+    Awaitable,
     AsyncGenerator
 )
 from openai import (
@@ -19,7 +21,7 @@ from ....auxiliary.http import (
     ClientLimits,
     ClientTimeout
 )
-from ._objects import (
+from ..objects import (
     ImagesRequest,
     ImagesRuntime,
     ImagesResponse,
@@ -34,7 +36,7 @@ from ._objects import (
     CompletedImageEvent,
 )
 
-class ImageGenerateCaller:
+class ImageGenerateClient:
     def __init__(self, max_concurrency: int = 100):
         self.coroutine_pool = CoroutinePool(max_concurrency)
     
@@ -67,6 +69,19 @@ class ImageGenerateCaller:
         )
     
     async def _call(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
+        func = None
+        if request.images is None:
+            func = self._call_generate_images
+        else:
+            func = self._call_edit_images
+        
+        if func is None:
+            raise ValueError("Invalid request")
+        
+        return await func(request, runtime)
+
+
+    async def _call_generate_images(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
         client: AsyncOpenAI = self._get_client(request, runtime)
         response: OpenAIImagesResponse | AsyncStream[OpenAIImageGenStreamEvent] = await client.images.generate(
             prompt = request.prompt,
@@ -82,6 +97,41 @@ class ImageGenerateCaller:
             size = self.none_to_omit(request.size),
             stream = request.stream,
             style = self.none_to_omit(request.style),
+            user = self.none_to_omit(request.user),
+            timeout = request.timeout.model_dump() if isinstance(request.timeout, ClientTimeout) else request.timeout # type: ignore
+        )
+
+        if request.stream and isinstance(response, AsyncStream):
+            parsed_response = self._parse_stream_response(response)
+        elif isinstance(response, OpenAIImagesResponse):
+            parsed_response = await self._parse_response(response)
+        else:
+            raise ValueError(f"Unexpected response type: {type(response).__name__}")
+
+        return parsed_response
+    
+    async def _call_edit_images(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
+        client: AsyncOpenAI = self._get_client(request, runtime)
+        files: list[bytes] = []
+        if request.images is None:
+            raise ValueError("Images must be provided")
+        
+        for image in request.images:
+            files.append(await image.get_file())
+        
+        response: OpenAIImagesResponse | AsyncStream[OpenAIImageGenStreamEvent] = await client.images.edit(
+            image = files,
+            prompt = request.prompt,
+            background = self.none_to_omit(request.background),
+            model = self.none_to_omit(request.model),
+            n = self.none_to_omit(request.n),
+            output_compression = self.none_to_omit(request.output_compression),
+            output_format = self.none_to_omit(request.output_format),
+            partial_images = self.none_to_omit(request.partial_images),
+            quality = self.none_to_omit(request.quality),
+            response_format = self.none_to_omit(request.response_format),
+            size = self.none_to_omit(request.size),
+            stream = request.stream,
             user = self.none_to_omit(request.user),
             timeout = request.timeout.model_dump() if isinstance(request.timeout, ClientTimeout) else request.timeout # type: ignore
         )

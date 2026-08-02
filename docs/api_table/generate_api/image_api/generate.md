@@ -8,8 +8,8 @@
     - **method:** `POST`
     - **type:** `JSON`
     - **Content:**
-      - 
       - `model_id` (str | list[str]): 模型 ID
+      - `images` (list[FILE_TYPE]): 图片文件，选填
       - `prompt` (str): 提示词
       - `background` (str): 背景设置
         - `transparent`：透明背景

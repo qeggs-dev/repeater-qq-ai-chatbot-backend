@@ -59,6 +59,7 @@ async def chat_endpoint(
         cross_user_data_routing = request.cross_user_data_routing,
         allowed_tool_calls = request.allowed_tool_calls,
         stream = request.stream
+        extra_bodys = request.extra_bodys
     )
     try:
         response = await server.runtime.chat_task_pool.run_task(

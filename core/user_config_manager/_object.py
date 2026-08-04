@@ -36,6 +36,7 @@ class UserConfigs(BaseModel):
     presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
     reasoning_effort: ReasoningEffort | None = None
     send_user_id: bool | None = None
+    extra_bodys: dict[str, Any] | None = None
 
     # Generate Loop
     max_generate_times: int | None = None

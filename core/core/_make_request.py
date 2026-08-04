@@ -51,7 +51,8 @@ def make_request(
     global_configs: GlobalConfigs,
     assistant_role: ContentRole,
     role_name: str | None = None,
-    thinking: bool | None = None
+    thinking: bool | None = None,
+    extra_bodys: dict[str, Any] | None = None,
 ) -> Request:
     # 创建请求对象
     request = Request()
@@ -182,6 +183,15 @@ def make_request(
             request.echo = configs.fim_echo
         else:
             request.echo = global_configs.model.default_fim_echo
+
+    if global_configs.model.enable_user_extra_bodys and extra_bodys is not None:
+        request.extra_bodys.update(extra_bodys)
+    if global_configs.model.extra_bodys:
+        request.extra_bodys.update(global_configs.model.extra_bodys)
+    if global_configs.model.enable_user_extra_bodys and configs.extra_bodys is not None:
+        request.extra_bodys.update(configs.extra_bodys)
+    if global_configs.model.extra_bodys_priority:
+        request.extra_bodys.update(global_configs.model.extra_bodys_priority)
     
     request.stream = global_configs.model.stream
     request.stream_options.include_obfuscation = global_configs.callapi.include_obfuscation

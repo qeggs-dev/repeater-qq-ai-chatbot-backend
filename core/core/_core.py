@@ -282,6 +282,7 @@ class Core:
             cross_user_data_routing: CrossUserDataRouting[str | None] | None = None,
             allowed_tool_calls: set[str] | None = None,
             stream: bool = False,
+            extra_bodys: dict[str, Any] | None = None,
         ) -> Response | AsyncGenerator[Delta | ContentUnit, None]:
         """
         与模型对话
@@ -305,6 +306,7 @@ class Core:
         :param cross_user_data_operations: 跨用户数据流
         :param allow_tool_calls: 是否允许工具调用
         :param stream: 是否流式输出
+        :param extra_bodys: 额外请求参数
         :return: 返回对话结果
         """
         try:
@@ -472,7 +474,8 @@ class Core:
                                 global_configs = global_configs,
                                 assistant_role = assistant_role,
                                 role_name = role_name,
-                                thinking = thinking
+                                thinking = thinking,
+                                extra_bodys = extra_bodys
                             )
 
                             if configs.max_generate_times:

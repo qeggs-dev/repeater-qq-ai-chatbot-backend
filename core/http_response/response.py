@@ -56,7 +56,7 @@ class Response(Generic[T]):
             for error in errors:
                 logger.error(
                     "{field}: {message}",
-                    field = ".".join(error["loc"]),
+                    field = ".".join(str(i) for i in error["loc"]),
                     message = error["msg"]
                 )
             return None

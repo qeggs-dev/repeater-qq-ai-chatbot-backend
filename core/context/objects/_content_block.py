@@ -1,6 +1,6 @@
 from __future__ import annotations
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Literal, Union
+from typing import Literal, Union, Annotated
 from enum import StrEnum
 
 class ContentBlockType(StrEnum):
@@ -80,10 +80,13 @@ class FileBlock(BaseModel):
     type: Literal[ContentBlockType.FILE] = ContentBlockType.FILE
     file: FileDataBlock = Field(default_factory=FileDataBlock)
 
-ContentBlock = Union[
-    TextBlock,
-    ImageBlock,
-    VideoBlock,
-    AudioBlock,
-    FileBlock
+ContentBlock = Annotated[
+    Union[
+        TextBlock,
+        ImageBlock,
+        VideoBlock,
+        AudioBlock,
+        FileBlock
+    ],
+    "OpenAI API standard multimodal content blocks."
 ]

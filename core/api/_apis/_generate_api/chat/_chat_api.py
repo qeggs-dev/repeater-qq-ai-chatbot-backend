@@ -58,7 +58,7 @@ async def chat_endpoint(
         save_new_only = request.save_new_only,
         cross_user_data_routing = request.cross_user_data_routing,
         allowed_tool_calls = request.allowed_tool_calls,
-        stream = request.stream
+        stream = request.stream,
         extra_bodys = request.extra_bodys
     )
     try:

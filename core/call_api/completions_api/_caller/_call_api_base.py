@@ -2,6 +2,7 @@ import sys
 import openai
 
 from typing import (
+    AsyncGenerator,
     Literal,
     AsyncIterator,
     TextIO,
@@ -32,6 +33,7 @@ from .._objects import (
 )
 from .._exceptions import *
 from ....pools.client_pool import ClientInfo
+from loguru import logger
 
 T = TypeVar("T")
 T_Value = TypeVar("T_Value")
@@ -92,11 +94,52 @@ class BaseCallAPI(ABC, Generic[T]):
             raise TypeError("request must be Request")
         if not isinstance(runtime, Runtime):
             raise TypeError("runtime must be Runtime")
+
+        with runtime.status_stack.enter("Init objects"):
+            # 创建模型响应对象
+            model_response = runtime.response
+
+        with runtime.status_stack.enter("Create OpenAI Client"):
+            # 创建OpenAI Client
+            logger.info(
+                "Created OpenAI Client",
+                user_id = user_id
+            )
+            client = self.get_client(
+                request = request,
+                runtime = runtime
+            )
+        
+        with runtime.status_stack.enter("Write calling log base data"):
+            # 写入调用日志基础数据
+            model_response.request_log.url = request.url
+            model_response.request_log.user_id = user_id
+            model_response.request_log.user_name = request.user_name
+            model_response.request_log.model = request.model
+            model_response.request_log.stream = request.stream
+
+        # 如果上下文为空，则抛出异常
+        with runtime.status_stack.enter("Check context"):
+            if not request.context:
+                raise ValueError("context is required")
+        
+        with runtime.status_stack.enter("Make extra body"):
+            extra_body = self.make_extra_body(
+                user_id = user_id,
+                request = request,
+                runtime = runtime,
+            )
         
         match request.interface:
             case InterfaceType.OPENAI:
                 try:
-                    return await self._openai_call(user_id, request, runtime)
+                    return await self._openai_call(
+                        user_id,
+                        request,
+                        runtime,
+                        client = client,
+                        extra_body = extra_body,
+                    )
                 except openai.APITimeoutError as e:
                     raise APITimeoutError(
                         message = e.message,
@@ -143,7 +186,14 @@ class BaseCallAPI(ABC, Generic[T]):
                 raise RuntimeError(f"Unknown InterfaceType: {interface}")
             
     @abstractmethod
-    async def _openai_call(self, user_id: str, request: Request, runtime: Runtime) -> T:
+    async def _openai_call(
+            self,
+            user_id:str,
+            request: Request,
+            runtime: Runtime,
+            client: openai.AsyncOpenAI,
+            extra_body: dict[str, Any],
+     ) -> T:
         pass
 
     @overload
@@ -238,6 +288,45 @@ class BaseCallAPI(ABC, Generic[T]):
     def streamable(self) -> bool:
         pass
 
+    def make_extra_body(self, user_id: str, request: Request, runtime: Runtime) -> dict[str, Any]:
+        extra_body: dict[str, Any] = {}
+
+        with runtime.status_stack.enter("thinking"):
+            if request.thinking is not None:
+                if request.thinking:
+                    extra_body["thinking"] = {
+                        "type": "enabled"
+                    }
+                else:
+                    extra_body["thinking"] = {
+                        "type": "disabled"
+                    }
+        
+        with runtime.status_stack.enter("reasoning_effort"):
+            if request.reasoning_effort is not None:
+                extra_body["reasoning_effort"] = request.reasoning_effort.value
+        
+        if request.send_user_id:
+            with runtime.status_stack.enter("user_id"):
+                extra_body["user_id"] = user_id
+        
+        if request.top_a is not None:
+            with runtime.status_stack.enter("top_a"):
+                extra_body["top_a"] = request.top_a
+        
+        if request.top_k is not None:
+            with runtime.status_stack.enter("top_k"):
+                extra_body["top_k"] = request.top_k
+        
+        if request.repetition_penalty is not None:
+            with runtime.status_stack.enter("repetition_penalty"):
+                extra_body["repetition_penalty"] = request.repetition_penalty
+
+        if request.extra_bodys:
+            extra_body.update(request.extra_bodys)
+
+        return extra_body
+
 class CallNstreamAPIBase(BaseCallAPI, ABC):
     """
     Base class for calling non-streaming API
@@ -248,7 +337,14 @@ class CallNstreamAPIBase(BaseCallAPI, ABC):
         return False
 
     @abstractmethod
-    async def _openai_call(self, user_id: str, request: Request, runtime: Runtime) -> Response:
+    async def _openai_call(
+        self,
+        user_id: str,
+        request: Request,
+        runtime: Runtime,
+        client: openai.AsyncOpenAI,
+        extra_body: dict[str, Any],
+    ) -> Response:
         pass
 
 class CallStreamAPIBase(BaseCallAPI, ABC):
@@ -261,5 +357,12 @@ class CallStreamAPIBase(BaseCallAPI, ABC):
         return True
 
     @abstractmethod
-    async def _openai_call(self, user_id: str, request: Request, runtime: Runtime) -> Coroutine[Any, Any, AsyncIterator[Delta]]:
+    async def _openai_call(
+            self,
+            user_id:str,
+            request: Request,
+            runtime: Runtime,
+            client: openai.AsyncOpenAI,
+            extra_body: dict[str, Any],
+     ) -> Coroutine[Any, Any, AsyncGenerator[Delta, None]]:
         pass

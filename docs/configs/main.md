@@ -382,7 +382,28 @@ PS: 配置管理器会递归扫描环境变量`CONFIG_DIR`下的所有json/yaml�
         // 如果这里为 true
         // 那么 /generate/chat/completion 接口调用时 stream 参数可以为 true 或 false
         // 且控制台和日志会打印当前 chunk ，并生成 chunk 统计数据
-        "stream": true
+        "stream": true,
+
+        // 可以填写一些固定的其他参数
+        // 如果用户填写了其他参数
+        // 优先使用此处填写的参数
+        "extra_bodys_priority": {
+            
+        },
+
+        // 可以填写一些固定的其他参数
+        // 如果用户填写了其他参数
+        // 则会覆盖此处填写的参数
+        "extra_bodys": {
+            
+        },
+
+        // 是否启用用户自定义参数
+        // 如果启用，用户可以自定义参数
+        // 如果不启用，用户自定义参数会被忽略，但服务器定义的参数不会受影响
+        // 该值也会影响 call_model 工具的行为
+        // 如果禁用，会忽略传入的 extra_bodys 参数
+        "enable_user_extra_bodys": false,
     },
 
     // MODEL API 配置

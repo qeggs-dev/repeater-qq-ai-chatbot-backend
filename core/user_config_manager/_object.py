@@ -31,6 +31,7 @@ class UserConfigs(BaseModel):
     stop: list[str] | None = None
     thinking: bool | None = None
     model_timeout: int | float | None = None
+    gen_image_timeout: int | float | None = None
     repetition_penalty: float | None = Field(default=None, gt=0.0, le=2.0)
     frequency_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)
     presence_penalty: float | None = Field(default=None, ge=-2.0, le=2.0)

@@ -45,6 +45,13 @@ async def generate_image(
         model_id
     )
 
+    timeout = user_configs.gen_image_timeout
+    if timeout is None:
+        timeout = global_configs.model.gen_image_timeout
+
+    if timeout is None:
+        timeout = model.timeout
+
     openai_pool = runtime.openai_pool
     image_generate_client = ImageGenerateClient(
         max_concurrency = 1000
@@ -70,7 +77,7 @@ async def generate_image(
 
         limits = model.limits,
         headers = header,
-        timeout = model.timeout,
+        timeout = timeout,
 
         images = request.images,
         prompt = request.prompt,

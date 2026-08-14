@@ -33,6 +33,7 @@ from ..request_log import (
 from ..status_map import StatusStack
 from ..pools.awaitable_pool import TaskPool
 from ..pools.openai_pool import OpenAIPool
+from ..pools.delayed_tasks_pool import DelayedTasksPool
 from ..auxiliary.http import (
     ssl_context,
     RepeaterTransport
@@ -179,3 +180,8 @@ class RepeaterRuntime:
     def init_licenses_data(self):
         self.licenses = LicenseLoader(self._configs.licenses)
         self.licenses.scan_licenses()
+
+    @init_list.append
+    @print_init_runtime("Delayed Tasks Pool")
+    def init_delayed_tasks_pool(self):
+        self.delayed_tasks_pool = DelayedTasksPool()

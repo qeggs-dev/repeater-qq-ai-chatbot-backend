@@ -31,3 +31,4 @@ class Request(BaseModel):
     stream: bool = False
     style: ImageStyle | None = None
     user: str | None = None
+    raw_response: bool = False

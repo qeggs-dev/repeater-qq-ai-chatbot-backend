@@ -79,8 +79,12 @@ PS: 配置管理器会递归扫描环境变量`CONFIG_DIR`下的所有json/yaml�
     // CallAPI 配置
     "callapi": {
         // 协程池最大并发数
-        // 仅在 AI 请求路径下生效
+        // 仅在 LLM 请求路径下生效
         "max_concurrency": 1000,
+
+        // 生成图片时，协程池最大并发数
+        // 仅在 AI 生图路径下生效
+        "gen_image_max_concurrency": 120,
 
         // 当为 true 时，将启用流混淆。
         // 流混淆会在流 delta 事件的 `obfuscation` 字段中添加随机字符，
@@ -157,6 +161,25 @@ PS: 配置管理器会递归扫描环境变量`CONFIG_DIR`下的所有json/yaml�
         // 非文本数据在日志中的最大显示长度
         // 设置为 null 则不进行截断
         "max_log_length_for_non_text_content": 25
+    },
+
+    // 生成图片保存配置
+    "generated_images": {
+        // 生成图片保存的目录
+        "base_dir": "./workspace/generated_images",
+
+        // 下载图片的分块大小
+        "download_chunk_size": 5242880,
+
+        // 生成图片保存的文件名前缀
+        "file_name_prefix": "GeneratedImage_",
+
+        // 默认图片保存的文件名后缀
+        "save_file_suffix": ".png",
+
+        // 生成图片在本地保存的过期时间，单位为秒
+        // 设该值为 null 时表示不过期
+        "image_timeout": 43200
     },
 
     // 全局异常处理器配置

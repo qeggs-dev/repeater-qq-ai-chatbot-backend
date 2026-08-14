@@ -9,7 +9,7 @@ from pathlib import Path
 from loguru import logger
 from ..global_config_manager import ConfigManager
 from typing import List, AsyncIterator, Generator, Iterable
-from ._request_log_object import RequestLog
+from .objects import RequestLogTypes, validate_request_log
 from pydantic import ValidationError
 
 class RequestLogManager:
@@ -23,8 +23,8 @@ class RequestLogManager:
         ):
 
         # 日志缓存列表
-        self._log_cache: List[RequestLog] = []
-        self._log_list: List[RequestLog] = []
+        self._log_cache: List[RequestLogTypes] = []
+        self._log_list: List[RequestLogTypes] = []
 
         # 防抖保存等待时间
         if debonce_save_wait_time is None:
@@ -97,7 +97,7 @@ class RequestLogManager:
             )
         )
 
-    async def add_request_log(self, request_log: RequestLog) -> None:
+    async def add_request_log(self, request_log: RequestLogTypes) -> None:
         """
         添加调用日志项
 
@@ -110,7 +110,7 @@ class RequestLogManager:
             logger.info("Request log added", user_id=request_log.user_id)
             await self._debonce_save()
 
-    async def add_multi_request_log(self, request_logs: Iterable[RequestLog]) -> None:
+    async def add_multi_request_log(self, request_logs: Iterable[RequestLogTypes]) -> None:
         """
         添加多个调用日志项
 
@@ -142,7 +142,7 @@ class RequestLogManager:
         
     # 将日志列表转换为字节流
     @staticmethod
-    def _log_bytestream(log_list: Iterable[RequestLog]) -> Generator[bytes, None, None]:
+    def _log_bytestream(log_list: Iterable[RequestLogTypes]) -> Generator[bytes, None, None]:
         for log in log_list:
             yield orjson.dumps(log.model_dump()) + b"\n"
 
@@ -207,7 +207,7 @@ class RequestLogManager:
         # 清空日志列表
         self._log_list.clear()
 
-    async def read_request_log(self) -> list[RequestLog]:
+    async def read_request_log(self) -> list[RequestLogTypes]:
         """
         从文件读取所有调用日志
 
@@ -218,7 +218,7 @@ class RequestLogManager:
             request_log_list.append(request_log)
         return request_log_list
 
-    async def read_stream_request_log(self) -> AsyncIterator[RequestLog]:
+    async def read_stream_request_log(self) -> AsyncIterator[RequestLogTypes]:
         """
         从文件流式读取所有调用日志
 
@@ -241,7 +241,7 @@ class RequestLogManager:
                 readed_log_count += 1
             cached = True
         else:
-            cache: list[RequestLog] = []
+            cache: list[RequestLogTypes] = []
             full_memory_cache = ConfigManager.get_configs().request_log.full_memory_cache
 
             async for log in self._read_file_logs():
@@ -268,7 +268,7 @@ class RequestLogManager:
             total = total,
         )
     
-    async def _read_file_logs(self) -> AsyncIterator[RequestLog]:
+    async def _read_file_logs(self) -> AsyncIterator[RequestLogTypes]:
         request_log_files = np.array(
             [str(file) for file in self._base_dir.glob("*.jsonl")]
         )
@@ -290,7 +290,7 @@ class RequestLogManager:
                             )
                             continue
                         try:
-                            yield RequestLog(**data)  # 生成文件日志
+                            yield validate_request_log(**data)  # 生成文件日志
                         except ValidationError as e:
                             errors = e.errors()
                             for error in errors:

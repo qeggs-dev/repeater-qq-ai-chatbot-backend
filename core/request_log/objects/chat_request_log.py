@@ -1,21 +1,20 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Any
-from ._timestamp_object import TimeStamp
-from ._logprob import Logprob
+from typing import Any, Literal
+from ..timestamp_object import TimeStamp
+from .._logprob import Logprob
+from .base_request_log import BaseRequestLog
 
-class RequestLog(BaseModel):
+class RequestLog(BaseRequestLog):
     """
     Class to represent a request log object.
     """
     model_config = ConfigDict(
         validate_assignment=True,
     )
-    
+
+    type: Literal["repeater.request_log.chat"] = "repeater.request_log.chat"
+
     id: str = ""
-    url: str = ""
-    model: str = ""
-    user_id: str = ""
-    task_id: str = ""
     user_name: str | None = None
     stream: bool = True
 
@@ -35,13 +34,12 @@ class RequestLog(BaseModel):
     translation_queue_backlog: list[int] = Field(default_factory=list)
     chunk_times: list[TimeStamp] = Field(default_factory=list)
     queue_backlog: list[int] = Field(default_factory=list)
-    created_time: int = 0
 
-    total_tokens: int = 0
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    cache_hit_count: int = 0
-    cache_miss_count: int = 0
+    total_tokens: int | None = None
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    cache_hit_count: int | None = None
+    cache_miss_count: int | None = None
     logprob: Logprob | list[Logprob] | None = None
 
     total_context_length: int = 0

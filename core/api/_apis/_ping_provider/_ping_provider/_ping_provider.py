@@ -1,7 +1,7 @@
 import random
 import asyncio
 
-from .....auxiliary.aioping.executor import Response
+from .....auxiliary.async_tools.aioping.executor import Response
 from fastapi.responses import ORJSONResponse
 from .._send_ping import send_ping, Detail
 from .....global_config_manager import ConfigManager

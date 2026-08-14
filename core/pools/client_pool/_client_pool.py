@@ -6,12 +6,12 @@ from cachetools import LRUCache
 from ._client_info import ClientInfo
 
 class ClientPool:
-    def __init__(self, cache_size: int = 100):
+    def __init__(self, cache_size: int | float = 100):
         self._clients: LRUCache[ClientInfo, AsyncClient] = LRUCache(maxsize=cache_size)
         self._pool_lock = asyncio.Lock()
         self._cache_hits: int = 0
         self._cache_misses: int = 0
-        self._cache_size: int = cache_size
+        self._cache_size: int | float = cache_size
     
     def get_client(
             self,

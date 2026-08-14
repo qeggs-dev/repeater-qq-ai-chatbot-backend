@@ -3,6 +3,7 @@ from ._runtime import ImagesRuntime
 from ._response import ImagesResponse
 from ._partial_image_event import PartialImageEvent
 from ._completed_image_event import CompletedImageEvent
+from ._downloader import ImageDownloader
 
 from .auxiliary.background import Background
 from .auxiliary.moderation import Moderation
@@ -29,6 +30,8 @@ __all__ = [
     "ImagesResponse",
     "PartialImageEvent",
     "CompletedImageEvent",
+    "ImageDownloader",
+    
     "Background",
     "Moderation",
     "OutputFormat",

@@ -1,3 +1,4 @@
+import os
 import httpx
 from typing import (
     Any,
@@ -40,8 +41,19 @@ from ..objects import (
 )
 
 class ImageGenerateClient:
-    def __init__(self, max_concurrency: int = 100):
+    def __init__(
+            self,
+            max_concurrency: int = 100,
+            download_chunk_size: int = 1024 * 1024 * 5,
+            file_name_prefix: str = "GeneratedImage_",
+            base_dir: str | os.PathLike = "./workspace/generated_images",
+            save_file_suffix: str = ".png"
+        ):
         self.coroutine_pool = CoroutinePool(max_concurrency)
+        self.download_chunk_size = download_chunk_size
+        self.file_name_prefix = file_name_prefix
+        self.base_dir = base_dir
+        self.save_file_suffix = save_file_suffix
     
     def none_to_omit(self, value: Any):
         if value is None:
@@ -92,6 +104,10 @@ class ImageGenerateClient:
         return result, ImageDownloader(
             response = result,
             client = client,
+            download_chunk_size = self.download_chunk_size,
+            file_name_prefix = self.file_name_prefix,
+            base_dir = self.base_dir,
+            save_file_suffix = self.save_file_suffix
         )
 
     async def _call_generate_images(

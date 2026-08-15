@@ -1,5 +1,5 @@
-from .....core.image.generate import generate_image
-from ..include_router import image_router
+from ._generate import generate_image
+from ._include_router import image_router
 
 __all__ = [
     "generate_image",

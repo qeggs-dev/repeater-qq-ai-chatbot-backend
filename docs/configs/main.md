@@ -704,245 +704,247 @@ PS: 配置管理器会递归扫描环境变量`CONFIG_DIR`下的所有json/yaml�
     // 服务器配置
     // 大部分情况只需要配置 host/port
     "server": {
-        // ==================== 网络基础配置 ====================
-        
-        // 绑定监听的 IP 地址
-        // 默认 127.0.0.1（仅本地访问）
-        // 设为 '0.0.0.0' 可监听所有接口
-        // 如果为 null 则从环境变量 `HOST` 中获取
-        "host": null,
-        
-        // 绑定监听的端口号
-        // 默认 8000
-        // 如果为 null 则从环境变量 `PORT` 中获取
-        "port": null,
-        
-        // Unix 域套接字（UDS）路径
-        // 若设置则忽略 host/port，用于进程间通信
-        "uds": null,
-        
-        // 文件描述符编号
-        // 若提供则使用已有的 socket（如从 systemd 继承）
-        // 优先级高于 host/port/uds
-        "fd": null,
-        
-        
-        // ==================== 协议/事件循环配置 ====================
-        
-        // 事件循环实现
-        // 'auto' - 自动选择（优先 uvloop）
-        // 'asyncio' - 使用标准库
-        // 'uvloop' - 使用高性能 uvloop
-        // 'none' - 不创建循环（用于嵌入场景）
-        "loop": "auto",
-        
-        // HTTP 协议解析器
-        // 'auto' - 自动选择（优先 httptools）
-        // 'h11' - 纯 Python 实现
-        // 'httptools' - 基于 Cython 的高性能解析器
-        "http": "auto",
-        
-        // WebSocket 协议实现
-        // 'auto' - 自动选择
-        // 'none' - 禁用 WebSocket
-        // 'websockets' - 使用 websockets 库
-        // 'websockets-sansio' - 无 I/O 版本
-        // 'wsproto' - 使用 wsproto 库
-        "ws": "auto",
-        
-        // WebSocket 接收消息的最大字节数
-        // 默认 16MB，超过则关闭连接
-        "ws_max_size": 16777216,
-        
-        // WebSocket 消息队列的最大长度（缓冲消息数）
-        "ws_max_queue": 32,
-        
-        // WebSocket 发送 ping 帧的间隔（秒）
-        // null 则禁用 ping，默认 20 秒
-        "ws_ping_interval": 20.0,
-        
-        // WebSocket 等待 pong 响应的超时时间（秒）
-        // 超时则关闭连接，默认 20 秒
-        "ws_ping_timeout": 20.0,
-        
-        // 是否启用 WebSocket 每条消息的压缩（per-message deflate）
-        "ws_per_message_deflate": true,
-        
-        
-        // ==================== 应用生命周期 ====================
-        
-        // 生命周期管理
-        // 'auto' - 自动检测
-        // 'on' - 强制启用（无则报错）
-        // 'off' - 完全禁用（不调用 startup/shutdown）
-        "lifespan": "auto",
-        
-        
-        // ==================== 日志配置 ====================
-        
-        // 加载环境变量文件（.env）的路径
-        // 用于读取配置
-        "env_file": null,
-        
-        // 日志配置
-        // 可传入 dict 或 JSON/YAML 文件路径
-        // null 则使用默认日志配置
-        "log_config": null,
-        
-        // 日志级别
-        // 如 'info'、'debug'、'warning'
-        // 或对应的数字值，null 则继承默认
-        "log_level": null,
-        
-        // 是否启用访问日志
-        // 记录每个请求的 method/path/status
-        "access_log": true,
-        
-        // 控制台输出是否启用颜色高亮
-        // null 则自动检测终端是否支持
-        "use_colors": null,
-        
-        
-        // ==================== 接口/协议适配 ====================
-        
-        // 应用接口类型
-        // 'auto' - 自动检测
-        // 'asgi3' - 强制 ASGI 3.0
-        // 'asgi2' - 强制 ASGI 2.0
-        // 'wsgi' - 兼容 WSGI 应用
-        "interface": "auto",
-        
-        
-        // ==================== 开发/重载配置 ====================
-        
-        // 是否启用热重载
-        // 检测文件变更自动重启，生产环境应设为 false
-        // 如果为 null 则从环境变量 `RELOAD` 中获取
-        "reload": null,
-        
-        // 热重载监控的额外目录
-        // 数组或逗号分隔字符串，默认监控应用代码目录
-        "reload_dirs": null,
-        
-        // 热重载检测到文件变更后的延迟重启时间（秒）
-        // 避免频繁重启，默认 0.25 秒
-        "reload_delay": 0.25,
-        
-        // 热重载时额外包含监控的文件模式
-        // 如 ["*.py"]，支持通配符
-        "reload_includes": null,
-        
-        // 热重载时排除监控的文件模式
-        // 如 ["*.log", "*.tmp"]，优先级高于 includes
-        "reload_excludes": null,
-        
-        
-        // ==================== 多进程/性能配置 ====================
-        
-        // 工作进程数量（多进程模式）
-        // null 则使用单进程，>1 时自动启用多进程
-        // 如果为 null 则从环境变量 `WORKERS` 中获取
-        "workers": null,
-        
-        // 是否信任代理头信息（X-Forwarded-*）
-        // 用于获取真实客户端 IP/协议
-        "proxy_headers": true,
-        
-        // 响应头是否包含 'Server: uvicorn'
-        "server_header": true,
-        
-        // 响应头是否包含 'Date' 时间戳
-        "date_header": true,
-        
-        // 允许信任的代理 IP 列表（用于 proxy_headers）
-        // '*' 表示信任所有，默认仅信任本地 IP
-        "forwarded_allow_ips": null,
-        
-        // 应用根路径前缀（如 '/api'）
-        // 用于反向代理时修正路径，默认空字符串
-        "root_path": "",
-        
-        // 最大并发连接数
-        // 超过则阻塞/拒绝，null 表示不限制
-        "limit_concurrency": null,
-        
-        // 每个工作进程处理的最大请求数
-        // 达到后优雅退出并重启，用于防止内存泄漏
-        // null 表示不限制
-        "limit_max_requests": null,
-        
-        // TCP 监听队列的最大长度（积压连接数）
-        "backlog": 2048,
-        
-        
-        // ==================== 超时配置 ====================
-        
-        // Keep-Alive 连接的空闲超时时间（秒）
-        // 超过则关闭连接，默认 5 秒
-        "timeout_keep_alive": 5,
-        
-        // 工作进程状态通知超时（秒）
-        // 主进程等待子进程响应的时间，默认 30 秒
-        "timeout_notify": 30,
-        
-        // 优雅关闭超时（秒）
-        // 等待工作进程完成当前请求后退出
-        // null 则使用默认值（通常为 timeout_notify）
-        "timeout_graceful_shutdown": null,
-        
-        // 工作进程健康检查间隔（秒）
-        // 主进程定期检查子进程是否存活，默认 5 秒
-        "timeout_worker_healthcheck": 5,
-        
-        
-        // ==================== SSL/TLS 配置 ====================
-        
-        // SSL 私钥文件路径（PEM 格式）
-        // 提供则启用 HTTPS
-        "ssl_keyfile": null,
-        
-        // SSL 证书文件路径（PEM 格式）
-        // 提供则启用 HTTPS
-        "ssl_certfile": null,
-        
-        // SSL 私钥文件的密码
-        // 如果私钥加密了，建议通过环境变量传入
-        "ssl_keyfile_password": null,
-        
-        // SSL/TLS 协议版本
-        // 默认使用 ssl.PROTOCOL_TLS_SERVER（支持 TLSv1.2+）
-        // 注：Python 中使用数字常量，JSONC 中保留为整数
-        "ssl_version": 4,
-        
-        // 客户端证书验证要求
-        // 0 = ssl.CERT_NONE（不验证）
-        // 1 = ssl.CERT_OPTIONAL（可选）
-        // 2 = ssl.CERT_REQUIRED（必须）
-        "ssl_cert_reqs": 0,
-        
-        // CA 证书文件路径（用于验证客户端证书）
-        // 仅在 ssl_cert_reqs 非 0 时需要
-        "ssl_ca_certs": null,
-        
-        // SSL 加密套件列表
-        // 默认 'TLSv1'（使用 TLSv1.0+ 兼容套件）
-        // 可自定义如 'ECDHE+AESGCM'
-        "ssl_ciphers": "TLSv1",
-        
-        
-        // ==================== 杂项配置 ====================
-        
-        // 自定义响应头列表
-        // 如 [["X-Custom", "value"]]，会添加到每个响应中
-        "headers": null,
-        
-        // 应用是否为工厂函数
-        // true 则每次请求调用获取应用实例
-        "factory": false,
-        
-        // h11 协议解析器允许的最大未完成事件大小（字节）
-        // 超过则报错，null 使用 h11 默认值
-        "h11_max_incomplete_event_size": null,
+        "uvicron": {
+            // ==================== 网络基础配置 ====================
+            
+            // 绑定监听的 IP 地址
+            // 默认 127.0.0.1（仅本地访问）
+            // 设为 '0.0.0.0' 可监听所有接口
+            // 如果为 null 则从环境变量 `HOST` 中获取
+            "host": null,
+            
+            // 绑定监听的端口号
+            // 默认 8000
+            // 如果为 null 则从环境变量 `PORT` 中获取
+            "port": null,
+            
+            // Unix 域套接字（UDS）路径
+            // 若设置则忽略 host/port，用于进程间通信
+            "uds": null,
+            
+            // 文件描述符编号
+            // 若提供则使用已有的 socket（如从 systemd 继承）
+            // 优先级高于 host/port/uds
+            "fd": null,
+            
+            
+            // ==================== 协议/事件循环配置 ====================
+            
+            // 事件循环实现
+            // 'auto' - 自动选择（优先 uvloop）
+            // 'asyncio' - 使用标准库
+            // 'uvloop' - 使用高性能 uvloop
+            // 'none' - 不创建循环（用于嵌入场景）
+            "loop": "auto",
+            
+            // HTTP 协议解析器
+            // 'auto' - 自动选择（优先 httptools）
+            // 'h11' - 纯 Python 实现
+            // 'httptools' - 基于 Cython 的高性能解析器
+            "http": "auto",
+            
+            // WebSocket 协议实现
+            // 'auto' - 自动选择
+            // 'none' - 禁用 WebSocket
+            // 'websockets' - 使用 websockets 库
+            // 'websockets-sansio' - 无 I/O 版本
+            // 'wsproto' - 使用 wsproto 库
+            "ws": "auto",
+            
+            // WebSocket 接收消息的最大字节数
+            // 默认 16MB，超过则关闭连接
+            "ws_max_size": 16777216,
+            
+            // WebSocket 消息队列的最大长度（缓冲消息数）
+            "ws_max_queue": 32,
+            
+            // WebSocket 发送 ping 帧的间隔（秒）
+            // null 则禁用 ping，默认 20 秒
+            "ws_ping_interval": 20.0,
+            
+            // WebSocket 等待 pong 响应的超时时间（秒）
+            // 超时则关闭连接，默认 20 秒
+            "ws_ping_timeout": 20.0,
+            
+            // 是否启用 WebSocket 每条消息的压缩（per-message deflate）
+            "ws_per_message_deflate": true,
+            
+            
+            // ==================== 应用生命周期 ====================
+            
+            // 生命周期管理
+            // 'auto' - 自动检测
+            // 'on' - 强制启用（无则报错）
+            // 'off' - 完全禁用（不调用 startup/shutdown）
+            "lifespan": "auto",
+            
+            
+            // ==================== 日志配置 ====================
+            
+            // 加载环境变量文件（.env）的路径
+            // 用于读取配置
+            "env_file": null,
+            
+            // 日志配置
+            // 可传入 dict 或 JSON/YAML 文件路径
+            // null 则使用默认日志配置
+            "log_config": null,
+            
+            // 日志级别
+            // 如 'info'、'debug'、'warning'
+            // 或对应的数字值，null 则继承默认
+            "log_level": null,
+            
+            // 是否启用访问日志
+            // 记录每个请求的 method/path/status
+            "access_log": true,
+            
+            // 控制台输出是否启用颜色高亮
+            // null 则自动检测终端是否支持
+            "use_colors": null,
+            
+            
+            // ==================== 接口/协议适配 ====================
+            
+            // 应用接口类型
+            // 'auto' - 自动检测
+            // 'asgi3' - 强制 ASGI 3.0
+            // 'asgi2' - 强制 ASGI 2.0
+            // 'wsgi' - 兼容 WSGI 应用
+            "interface": "auto",
+            
+            
+            // ==================== 开发/重载配置 ====================
+            
+            // 是否启用热重载
+            // 检测文件变更自动重启，生产环境应设为 false
+            // 如果为 null 则从环境变量 `RELOAD` 中获取
+            "reload": null,
+            
+            // 热重载监控的额外目录
+            // 数组或逗号分隔字符串，默认监控应用代码目录
+            "reload_dirs": null,
+            
+            // 热重载检测到文件变更后的延迟重启时间（秒）
+            // 避免频繁重启，默认 0.25 秒
+            "reload_delay": 0.25,
+            
+            // 热重载时额外包含监控的文件模式
+            // 如 ["*.py"]，支持通配符
+            "reload_includes": null,
+            
+            // 热重载时排除监控的文件模式
+            // 如 ["*.log", "*.tmp"]，优先级高于 includes
+            "reload_excludes": null,
+            
+            
+            // ==================== 多进程/性能配置 ====================
+            
+            // 工作进程数量（多进程模式）
+            // null 则使用单进程，>1 时自动启用多进程
+            // 如果为 null 则从环境变量 `WORKERS` 中获取
+            "workers": null,
+            
+            // 是否信任代理头信息（X-Forwarded-*）
+            // 用于获取真实客户端 IP/协议
+            "proxy_headers": true,
+            
+            // 响应头是否包含 'Server: uvicorn'
+            "server_header": true,
+            
+            // 响应头是否包含 'Date' 时间戳
+            "date_header": true,
+            
+            // 允许信任的代理 IP 列表（用于 proxy_headers）
+            // '*' 表示信任所有，默认仅信任本地 IP
+            "forwarded_allow_ips": null,
+            
+            // 应用根路径前缀（如 '/api'）
+            // 用于反向代理时修正路径，默认空字符串
+            "root_path": "",
+            
+            // 最大并发连接数
+            // 超过则阻塞/拒绝，null 表示不限制
+            "limit_concurrency": null,
+            
+            // 每个工作进程处理的最大请求数
+            // 达到后优雅退出并重启，用于防止内存泄漏
+            // null 表示不限制
+            "limit_max_requests": null,
+            
+            // TCP 监听队列的最大长度（积压连接数）
+            "backlog": 2048,
+            
+            
+            // ==================== 超时配置 ====================
+            
+            // Keep-Alive 连接的空闲超时时间（秒）
+            // 超过则关闭连接，默认 5 秒
+            "timeout_keep_alive": 5,
+            
+            // 工作进程状态通知超时（秒）
+            // 主进程等待子进程响应的时间，默认 30 秒
+            "timeout_notify": 30,
+            
+            // 优雅关闭超时（秒）
+            // 等待工作进程完成当前请求后退出
+            // null 则使用默认值（通常为 timeout_notify）
+            "timeout_graceful_shutdown": null,
+            
+            // 工作进程健康检查间隔（秒）
+            // 主进程定期检查子进程是否存活，默认 5 秒
+            "timeout_worker_healthcheck": 5,
+            
+            
+            // ==================== SSL/TLS 配置 ====================
+            
+            // SSL 私钥文件路径（PEM 格式）
+            // 提供则启用 HTTPS
+            "ssl_keyfile": null,
+            
+            // SSL 证书文件路径（PEM 格式）
+            // 提供则启用 HTTPS
+            "ssl_certfile": null,
+            
+            // SSL 私钥文件的密码
+            // 如果私钥加密了，建议通过环境变量传入
+            "ssl_keyfile_password": null,
+            
+            // SSL/TLS 协议版本
+            // 默认使用 ssl.PROTOCOL_TLS_SERVER（支持 TLSv1.2+）
+            // 注：Python 中使用数字常量，JSONC 中保留为整数
+            "ssl_version": 4,
+            
+            // 客户端证书验证要求
+            // 0 = ssl.CERT_NONE（不验证）
+            // 1 = ssl.CERT_OPTIONAL（可选）
+            // 2 = ssl.CERT_REQUIRED（必须）
+            "ssl_cert_reqs": 0,
+            
+            // CA 证书文件路径（用于验证客户端证书）
+            // 仅在 ssl_cert_reqs 非 0 时需要
+            "ssl_ca_certs": null,
+            
+            // SSL 加密套件列表
+            // 默认 'TLSv1'（使用 TLSv1.0+ 兼容套件）
+            // 可自定义如 'ECDHE+AESGCM'
+            "ssl_ciphers": "TLSv1",
+            
+            
+            // ==================== 杂项配置 ====================
+            
+            // 自定义响应头列表
+            // 如 [["X-Custom", "value"]]，会添加到每个响应中
+            "headers": null,
+            
+            // 应用是否为工厂函数
+            // true 则每次请求调用获取应用实例
+            "factory": false,
+            
+            // h11 协议解析器允许的最大未完成事件大小（字节）
+            // 超过则报错，null 使用 h11 默认值
+            "h11_max_incomplete_event_size": null
+        },
         
         // （内部使用）是否在重启过程中
         // 用于状态标记，一般不需手动设置

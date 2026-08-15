@@ -1,10 +1,16 @@
 import time
 from datetime import datetime, timezone
+from .request import Request
 from ...request_log import ImageRequestLog
 from loguru import logger
 
 class ImageFastStatistics:
-    def __init__(self, request_log: ImageRequestLog):
+    def __init__(
+            self,
+            request: Request,
+            request_log: ImageRequestLog
+        ):
+        self.request = request
         self.request_log = request_log
         self.now = datetime.now()
 
@@ -37,6 +43,31 @@ class ImageFastStatistics:
         yield f"Model: {self.request_log.model}"
         yield f"User ID: {self.request_log.user_id}"
         yield f"Task ID: {self.request_log.task_id}"
+        if self.request.images:
+            yield f"Input Image Count: {len(self.request.images)}"
+        yield f"Prompt: \n{self.request.prompt}"
+        if self.request.background:
+            yield f"Background: {self.request.background.value}"
+        if self.request.moderation:
+            yield f"Moderation: {self.request.moderation.value}"
+        yield f"Generation Count: {self.request.n}"
+        if self.request.output_compression:
+            yield f"Output Compression: {self.request.output_compression}"
+        if self.request.output_format:
+            yield f"Output Format: {self.request.output_format.value}"
+        if self.request.partial_images:
+            yield f"Partial Images: {self.request.partial_images}"
+        if self.request.quality:
+            yield f"Quality: {self.request.quality.value}"
+        if self.request.response_format:
+            yield f"Response Format: {self.request.response_format.value}"
+        if self.request.size:
+            yield f"Size: {self.request.size}"
+        yield f"Stream: {self.request.stream}"
+        if self.request.style:
+            yield f"Style: {self.request.style.value}"
+        yield f"User: {self.request.user}"
+        yield f"Raw Response: {self.request.raw_response}"
         if isinstance(self.request_log.created_time, int):
             yield f"Created Time(Local): {datetime.fromtimestamp(self.request_log.created_time)}"
             yield f"Created Time(UTC): {datetime.fromtimestamp(self.request_log.created_time, tz=timezone.utc)}"
@@ -64,13 +95,19 @@ class ImageFastStatistics:
     def get_statistics(self) -> str:
         return "\n".join(self.gen_statistics_lines())
 
-def log_statistics(request_log: ImageRequestLog) -> None:
+def log_statistics(
+        request: Request,
+        request_log: ImageRequestLog
+    ) -> None:
     logger.info(
         "Generating fast statistics...",
         user_id = request_log.user_id
     )
     fs_start_time = time.perf_counter_ns()
-    fast_statistics = ImageFastStatistics(request_log)
+    fast_statistics = ImageFastStatistics(
+        request,
+        request_log
+    )
     fs_end_time = time.perf_counter_ns()
 
     fs_format_start_time = time.perf_counter_ns()

@@ -31,7 +31,7 @@ async def parse_response(
     runtime: RepeaterRuntime,
     result: AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse,
     downloader: ImageDownloader
-):
+) -> ORJSONResponse | StreamingResponse:
     if isinstance(result, ImagesResponse):
         images: list[Image] = []
         async for response, path in downloader.download():
@@ -64,7 +64,7 @@ async def parse_response(
             request_log
         )
 
-        log_statistics(request_log)
+        log_statistics(request, request_log)
         
         return ORJSONResponse(
             result.model_dump(exclude_none = True),

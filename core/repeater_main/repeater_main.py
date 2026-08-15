@@ -70,19 +70,19 @@ class RepeaterMain:
         env_config_workers = self.env.int("WORKERS", None)
         env_config_reload = self.env.bool("RELOAD", False)
 
-        host: str | None = configs.server.host
+        host: str | None = configs.server.uvicorn.host
         if host is None:
             host = env_config_host
         
-        port: int | None = configs.server.port
+        port: int | None = configs.server.uvicorn.port
         if port is None:
             port = env_config_port
         
-        workers: int | None = configs.server.workers
+        workers: int | None = configs.server.uvicorn.workers
         if workers is None:
             workers = env_config_workers
         
-        reload: bool | None = configs.server.reload
+        reload: bool | None = configs.server.uvicorn.reload
         if reload is None:
             reload = env_config_reload
 
@@ -101,7 +101,7 @@ class RepeaterMain:
         if reload:
             logger.info("Server will reload on code change")
 
-        data = configs.server.model_dump()
+        data = configs.server.uvicorn.model_dump()
 
         data["host"] = host
         data["port"] = port

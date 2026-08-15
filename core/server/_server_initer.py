@@ -58,7 +58,7 @@ class ServerIniter:
         """
         Init core instance.
         """
-        from ..core import Core
+        from ..core.chat import Core
         self.server.core = Core(
             runtime = self.server.runtime
         )

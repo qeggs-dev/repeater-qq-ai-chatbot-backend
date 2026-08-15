@@ -17,6 +17,9 @@ from .auxiliary.token_usage import (
     ImageTokenUsage,
     ImageUsageTokensDetails
 )
+from .auxiliary.stream_usage import (
+    StreamUsage
+)
 from .auxiliary.files import (
     PathFile,
     UrlFile,
@@ -42,6 +45,7 @@ __all__ = [
     "Image",
     "ImageTokenUsage",
     "ImageUsageTokensDetails",
+    "StreamUsage",
     "PathFile",
     "UrlFile",
     "Base64File",

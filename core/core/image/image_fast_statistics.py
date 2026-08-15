@@ -1,5 +1,7 @@
+import time
 from datetime import datetime, timezone
-from .....request_log import ImageRequestLog
+from ...request_log import ImageRequestLog
+from loguru import logger
 
 class ImageFastStatistics:
     def __init__(self, request_log: ImageRequestLog):
@@ -35,8 +37,16 @@ class ImageFastStatistics:
         yield f"Model: {self.request_log.model}"
         yield f"User ID: {self.request_log.user_id}"
         yield f"Task ID: {self.request_log.task_id}"
-        yield f"Created Time(Local): {datetime.fromtimestamp(self.request_log.created_time)}"
-        yield f"Created Time(UTC): {datetime.fromtimestamp(self.request_log.created_time, tz=timezone.utc)}"
+        if isinstance(self.request_log.created_time, int):
+            yield f"Created Time(Local): {datetime.fromtimestamp(self.request_log.created_time)}"
+            yield f"Created Time(UTC): {datetime.fromtimestamp(self.request_log.created_time, tz=timezone.utc)}"
+        elif isinstance(self.request_log.created_time, list):
+            for index, created_time in enumerate(self.request_log.created_time):
+                yield f"Index: {index}"
+                yield f"  - Created Time(Local): {datetime.fromtimestamp(created_time)}"
+                yield f"  - Created Time(UTC): {datetime.fromtimestamp(created_time, tz=timezone.utc)}"
+        else:
+            yield f"Created Time: {self.request_log.created_time}"
         yield self.centre_title(
             "Token Count", 
             title_width = title_width,
@@ -53,3 +63,23 @@ class ImageFastStatistics:
 
     def get_statistics(self) -> str:
         return "\n".join(self.gen_statistics_lines())
+
+def log_statistics(request_log: ImageRequestLog) -> None:
+    logger.info(
+        "Generating fast statistics...",
+        user_id = request_log.user_id
+    )
+    fs_start_time = time.perf_counter_ns()
+    fast_statistics = ImageFastStatistics(request_log)
+    fs_end_time = time.perf_counter_ns()
+
+    fs_format_start_time = time.perf_counter_ns()
+    fast_statistics_str = fast_statistics.get_statistics()
+    fs_format_end_end = time.perf_counter_ns() 
+    logger.info(
+        "Fast Statistics (Operation Time: {fs_time:.2f}ms | Format Time: {format_time:.2f}ms):\n{content}",
+        user_id = request_log.user_id,
+        fs_time = (fs_end_time - fs_start_time) / 1e6,
+        format_time = (fs_format_end_end - fs_format_start_time) / 1e6,
+        content = fast_statistics_str
+    )

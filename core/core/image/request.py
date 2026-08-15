@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from .....call_api.image import (
+from ...call_api.image import (
     Background,
     Moderation,
     OutputFormat,

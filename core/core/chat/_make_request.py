@@ -15,25 +15,25 @@ import aiofiles
 from loguru import logger
 
 # ==== 自定义库 ==== #
-from ..call_api.completions_api import (
+from ...call_api.completions_api import (
     Request,
 )
-from ..context import (
+from ...context import (
     ContentRole,
     Context,
     ContentUnit,
 )
-from ..user_config_manager import (
+from ...user_config_manager import (
     UserConfigs
 )
-from ..global_config_manager import GlobalConfigs
-from ..assist_struct import (
+from ...global_config_manager import GlobalConfigs
+from ...assist_struct import (
     RequestUserInfo,
 )
-from ..clients.model_info import (
+from ...clients.model_info import (
     ModelInfo,
 )
-from ..special_exception import HTTPException
+from ...special_exception import HTTPException
 from ._print_request_info import print_request_info
 
 def make_request(

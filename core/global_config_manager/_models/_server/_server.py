@@ -3,8 +3,8 @@ from pydantic import BaseModel
 from typing import Any, Literal
 
 class ServerConfig(BaseModel):
-    host: str = "127.0.0.1"
-    port: int = 8000
+    host: str | None = None
+    port: int | None = None
     uds: str | None = None
     fd: int | None = None
     loop: Literal["none", "auto", "asyncio", "uvloop"] | str = "auto"
@@ -22,7 +22,7 @@ class ServerConfig(BaseModel):
     access_log: bool = True
     use_colors: bool | None = None
     interface: Literal["auto", "asgi3", "asgi2", "wsgi"] = "auto"
-    reload: bool = False
+    reload: bool | None = None
     reload_dirs: list[str] | str | None = None
     reload_delay: float = 0.25
     reload_includes: list[str] | str | None = None

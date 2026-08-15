@@ -1,4 +1,4 @@
-from .core import Core
+from .core.chat import Core
 from ._info import (
     __version__,
     __author__,

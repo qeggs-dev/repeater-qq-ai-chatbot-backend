@@ -15,7 +15,7 @@ async def generate_image(
     """
     Generate image from prompt.
     """
-    await generate_image_core(
+    return await generate_image_core(
         user_id,
         request,
         fastapi_request

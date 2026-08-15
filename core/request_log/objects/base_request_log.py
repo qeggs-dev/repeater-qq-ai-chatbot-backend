@@ -18,4 +18,4 @@ class BaseRequestLog(BaseModel):
     user_id: str = ""
     task_id: str = ""
     
-    created_time: int = 0
+    created_time: int | list[int] = 0

@@ -100,12 +100,16 @@ class RepeaterMain:
         
         if reload:
             logger.info("Server will reload on code change")
+
+        data = configs.server.model_dump()
+
+        data["host"] = host
+        data["port"] = port
+        data["workers"] = workers
+        data["reload"] = reload
         
         self.server_initer.init_server(
-            host = host,
-            port = port,
-            workers = workers,
-            reload = reload
+            **data
         )
 
         self.server_initer.init_middleware()

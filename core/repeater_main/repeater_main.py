@@ -194,10 +194,11 @@ class RepeaterMain:
             asyncio_debug = configs.server.asyncio_debug
         
         try:
-            return asyncio.run(
-                self.run_server(),
-                debug = asyncio_debug
+            runner = asyncio.Runner(
+                debug = asyncio_debug,
+                loop_factory = self.server.server_config.get_loop_factory(),
             )
+            runner.run(self.run_server())
         except KeyboardInterrupt:
             logger.info("Server shutting down...")
         except asyncio.CancelledError:

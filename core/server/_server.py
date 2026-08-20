@@ -41,6 +41,7 @@ class Server:
         )
         self.runtime: RepeaterRuntime
         self.server: uvicorn.Server
+        self.server_config: uvicorn.Config
         self.lifespan: AsyncContextManager[None]
         self.admin_key_manager: AdminKeyManager
         self.core: Core

@@ -198,6 +198,10 @@ class RepeaterMain:
                 debug = asyncio_debug,
                 loop_factory = self.server.server_config.get_loop_factory(),
             )
+            logger.info(
+                "Usage of asyncio loop: {loop}",
+                loop = repr(runner.get_loop())
+            )
             runner.run(
                 coro = self.run_server()
             )

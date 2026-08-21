@@ -4,6 +4,7 @@ import orjson
 from typing import AsyncIterator
 from fastapi.responses import ORJSONResponse, StreamingResponse
 
+@request_log_router.get("")
 @request_log_router.get("/")
 @request_log_router.get("/list")
 async def get_request_log():

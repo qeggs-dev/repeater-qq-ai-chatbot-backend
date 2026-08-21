@@ -19,7 +19,7 @@ from loguru import logger
 
 # ==== 自定义库 ==== #
 from ..admin_api_key_manager import AdminKeyManager
-from ..core import Core
+from ..core.chat import Core
 from ._lifespan import Lifespan
 from .._info import __version__
 from ..runtime_container import RepeaterRuntime
@@ -41,6 +41,7 @@ class Server:
         )
         self.runtime: RepeaterRuntime
         self.server: uvicorn.Server
+        self.server_config: uvicorn.Config
         self.lifespan: AsyncContextManager[None]
         self.admin_key_manager: AdminKeyManager
         self.core: Core

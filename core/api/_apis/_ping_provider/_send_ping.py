@@ -2,8 +2,8 @@ import socket
 from urllib.parse import urlparse
 from dataclasses import dataclass, field
 
-from ....auxiliary.aioping import ping
-from ....auxiliary.aioping.executor import ResponseList
+from ....auxiliary.async_tools import ping
+from ....auxiliary.async_tools.aioping.executor import ResponseList
 
 @dataclass
 class Detail:

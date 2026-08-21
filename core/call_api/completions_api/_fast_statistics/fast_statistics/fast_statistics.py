@@ -1,3 +1,4 @@
+import orjson
 import numpy as np
 
 from datetime import datetime, timezone
@@ -88,6 +89,7 @@ class FastStatistics:
         self.new_content_length = response.request_log.new_content_length
         self.historical_context_length = self.historical_context_text_length
         self.new_context_length = self.new_context_text_length
+        self.extra_body_json = orjson.dumps(self.request.extra_bodys, option=orjson.OPT_INDENT_2).decode("utf-8")
     
     def format_statistics(
         self,
@@ -236,6 +238,10 @@ class FastStatistics:
             yield "Reasoning Prompt: Retained"
         else:
             yield "Reasoning Prompt: Removed"
+
+        if self.request.extra_bodys:
+            yield "Extra Body:"
+            yield self.extra_body_json
     
     def _format_response(
         self,

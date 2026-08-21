@@ -81,7 +81,15 @@ async def markdown_to_html(
         strip = True,  # 移除不允许的标签
         strip_comments = True  # 移除注释
     )
-
+    clean_document_bottom_comment = bleach.clean(
+        document_bottom_comment,
+        tags = allowed_tags or [],
+        attributes = allowed_attrs or [],
+        protocols = allowed_protocols or [],
+        strip = True,  # 移除不允许的标签
+        strip_comments = True  # 移除注释
+    )
+    
     # 4. 预处理 HTML 文本
     if preprocess_map_after:
         for key, value in preprocess_map_after.items():
@@ -101,7 +109,7 @@ async def markdown_to_html(
         adaptive_width_css = adaptive_width_css,
         html_template_url = html_url,
         style_name = html.escape(style_name),
-        document_bottom_comment = document_bottom_comment,
+        document_bottom_comment = clean_document_bottom_comment,
         title = html.escape(title)
     )
     

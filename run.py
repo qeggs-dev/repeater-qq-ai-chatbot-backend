@@ -611,6 +611,7 @@ class SlovesStarter:
                     suffix += 1
             print("Continuing to run the program will operate with the default configuration...")
             self.pause_program(ExitCode.ONLY_PAUSE)
+            config = None
         
         try:
             if config:

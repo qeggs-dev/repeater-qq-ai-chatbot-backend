@@ -76,4 +76,5 @@ class Request(BaseModel):
 
     tools: list[dict[str, Any]] | None = None
     tool_choice: str | dict[str, str | dict[str, str]] | None = None
-    
+
+    extra_bodys: dict[str, Any] = Field(default_factory=dict)

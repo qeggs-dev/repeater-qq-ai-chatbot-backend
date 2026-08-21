@@ -7,6 +7,7 @@ from typing import (
 )
 
 # ==== 第三方库 ==== #
+import openai
 from openai.types.chat import ChatCompletionChunk
 from openai.types.completion import Completion
 from openai import AsyncStream
@@ -24,7 +25,14 @@ from ._call_api_base import CallStreamAPIBase
 from .._exceptions import *
 
 class StreamAPI(CallStreamAPIBase):
-    async def _openai_call(self, user_id: str, request: Request, runtime: Runtime) -> AsyncGenerator[Delta, Any]:
+    async def _openai_call(
+            self,
+            user_id:str,
+            request: Request,
+            runtime: Runtime,
+            client: openai.AsyncOpenAI,
+            extra_body: dict[str, Any],
+     ) -> AsyncGenerator[Delta, None]:
         """
         调用流式API
 
@@ -56,38 +64,11 @@ class StreamAPI(CallStreamAPIBase):
                 raise ValueError("context is required")
         
         with runtime.status_stack.enter("Make extra body"):
-            extra_body = {}
-
-            with runtime.status_stack.enter("thinking"):
-                if request.thinking is not None:
-                    if request.thinking:
-                        extra_body["thinking"] = {
-                            "type": "enabled"
-                        }
-                    else:
-                        extra_body["thinking"] = {
-                            "type": "disabled"
-                        }
-            
-            with runtime.status_stack.enter("reasoning_effort"):
-                if request.reasoning_effort is not None:
-                    extra_body["reasoning_effort"] = request.reasoning_effort.value
-            
-            if request.send_user_id:
-                with runtime.status_stack.enter("user_id"):
-                    extra_body["user_id"] = user_id
-            
-            if request.top_a is not None:
-                with runtime.status_stack.enter("top_a"):
-                    extra_body["top_a"] = request.top_a
-            
-            if request.top_k is not None:
-                with runtime.status_stack.enter("top_k"):
-                    extra_body["top_k"] = request.top_k
-            
-            if request.repetition_penalty is not None:
-                with runtime.status_stack.enter("repetition_penalty"):
-                    extra_body["repetition_penalty"] = request.repetition_penalty
+            extra_body = self.make_extra_body(
+                user_id = user_id,
+                request = request,
+                runtime = runtime
+            )
         
         # 请求流式连接
         with runtime.status_stack.enter("Send Request"):

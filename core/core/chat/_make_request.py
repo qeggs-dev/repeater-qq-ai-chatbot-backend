@@ -15,25 +15,25 @@ import aiofiles
 from loguru import logger
 
 # ==== 自定义库 ==== #
-from ..call_api.completions_api import (
+from ...call_api.completions_api import (
     Request,
 )
-from ..context import (
+from ...context import (
     ContentRole,
     Context,
     ContentUnit,
 )
-from ..user_config_manager import (
+from ...user_config_manager import (
     UserConfigs
 )
-from ..global_config_manager import GlobalConfigs
-from ..assist_struct import (
+from ...global_config_manager import GlobalConfigs
+from ...assist_struct import (
     RequestUserInfo,
 )
-from ..clients.model_info import (
+from ...clients.model_info import (
     ModelInfo,
 )
-from ..special_exception import HTTPException
+from ...special_exception import HTTPException
 from ._print_request_info import print_request_info
 
 def make_request(
@@ -51,7 +51,8 @@ def make_request(
     global_configs: GlobalConfigs,
     assistant_role: ContentRole,
     role_name: str | None = None,
-    thinking: bool | None = None
+    thinking: bool | None = None,
+    extra_bodys: dict[str, Any] | None = None,
 ) -> Request:
     # 创建请求对象
     request = Request()
@@ -182,6 +183,15 @@ def make_request(
             request.echo = configs.fim_echo
         else:
             request.echo = global_configs.model.default_fim_echo
+
+    if global_configs.model.enable_user_extra_bodys and extra_bodys is not None:
+        request.extra_bodys.update(extra_bodys)
+    if global_configs.model.extra_bodys:
+        request.extra_bodys.update(global_configs.model.extra_bodys)
+    if global_configs.model.enable_user_extra_bodys and configs.extra_bodys is not None:
+        request.extra_bodys.update(configs.extra_bodys)
+    if global_configs.model.extra_bodys_priority:
+        request.extra_bodys.update(global_configs.model.extra_bodys_priority)
     
     request.stream = global_configs.model.stream
     request.stream_options.include_obfuscation = global_configs.callapi.include_obfuscation

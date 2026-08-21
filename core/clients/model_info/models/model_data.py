@@ -1,3 +1,4 @@
+import time
 from pydantic import BaseModel, Field
 from .architecture import Architecture
 from .pricing import Pricing
@@ -17,11 +18,15 @@ class ModelAPIData(BaseModel):
     pricing: Pricing | None = None
     top_provider: TopProvider | None = None
     per_request_limits: None = None
-    supported_parameters: list[SupportedParameters] | None = None
+    supported_parameters: list[SupportedParameters | str] | None = None
     knowledge_cutoff: str | None = None
     expiration_date: str | None = None
     links: Links | None = None
     disable_to: int | None = None
+
+    def disable(self, timeout: int):
+        now = time.time_ns()
+        self.disable_to = now + timeout
 
 class ModelAPIResponse(BaseModel):
     data: list[ModelAPIData] = Field(default_factory=list)

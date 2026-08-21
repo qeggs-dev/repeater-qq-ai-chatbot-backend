@@ -33,6 +33,7 @@ from .image import (
     ImagesResponse,
     PartialImageEvent,
     CompletedImageEvent,
+    ImageDownloader,
 
     Background,
     Moderation,
@@ -82,6 +83,7 @@ __all__ = [
     "ImagesResponse",
     "PartialImageEvent",
     "CompletedImageEvent",
+    "ImageDownloader",
     
     "Background",
     "Moderation",

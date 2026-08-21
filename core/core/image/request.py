@@ -1,5 +1,5 @@
 from pydantic import BaseModel, ConfigDict
-from .....call_api.image import (
+from ...call_api.image import (
     Background,
     Moderation,
     OutputFormat,
@@ -31,3 +31,4 @@ class Request(BaseModel):
     stream: bool = False
     style: ImageStyle | None = None
     user: str | None = None
+    raw_response: bool = False

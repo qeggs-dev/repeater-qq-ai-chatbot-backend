@@ -27,3 +27,4 @@ class ChatRequest(BaseModel):
     cross_user_data_routing: CrossUserDataRouting[str | None] | None = None
     allowed_tool_calls: set[str] | None = None
     stream: bool = False
+    extra_bodys: dict[str, Any] | None = None

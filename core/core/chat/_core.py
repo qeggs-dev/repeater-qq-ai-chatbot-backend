@@ -18,47 +18,47 @@ import aiofiles
 from loguru import logger
 
 # ==== 自定义库 ==== #
-from ..call_api.completions_api import (
+from ...call_api.completions_api import (
     Runtime as RequestRuntime,
     Response as ModelResponse,
     CallAPIException,
     Delta
 )
-from ..model_requester import (
+from ...model_requester import (
     ModelRequester,
     MultiResponse
 )
-from ..context import (
+from ...context import (
     ContextLoader,
     ContentRole,
     ContentUnit,
 )
-from ..user_config_manager import (
+from ...user_config_manager import (
     UserConfigs
 )
-from ..pools.lock_pool import AsyncLockPool
-from ..text_buffer import ContentBuffer
-from ..global_config_manager import (
+from ...pools.lock_pool import AsyncLockPool
+from ...text_buffer import ContentBuffer
+from ...global_config_manager import (
     ConfigManager,
     GlobalConfigs
 )
-from ..assist_struct import (
+from ...assist_struct import (
     Response,
     RequestUserInfo,
     CrossUserDataRouting,
     AdditionalData
 )
-from ..special_exception import HTTPException
-from ..request_log import (
+from ...special_exception import HTTPException
+from ...request_log import (
     TimeStamp
 )
-from ..clients.model_info import (
+from ...clients.model_info import (
     ModelInfo
 )
-from ..template_render import (
+from ...template_render import (
     TemplateParser
 )
-from ..runtime_container import RepeaterRuntime
+from ...runtime_container import RepeaterRuntime
 from ._make_request import make_request
 from ._make_context import make_context
 from ._post_treatment import post_treatment
@@ -282,6 +282,7 @@ class Core:
             cross_user_data_routing: CrossUserDataRouting[str | None] | None = None,
             allowed_tool_calls: set[str] | None = None,
             stream: bool = False,
+            extra_bodys: dict[str, Any] | None = None,
         ) -> Response | AsyncGenerator[Delta | ContentUnit, None]:
         """
         与模型对话
@@ -305,6 +306,7 @@ class Core:
         :param cross_user_data_operations: 跨用户数据流
         :param allow_tool_calls: 是否允许工具调用
         :param stream: 是否流式输出
+        :param extra_bodys: 额外请求参数
         :return: 返回对话结果
         """
         try:
@@ -472,7 +474,8 @@ class Core:
                                 global_configs = global_configs,
                                 assistant_role = assistant_role,
                                 role_name = role_name,
-                                thinking = thinking
+                                thinking = thinking,
+                                extra_bodys = extra_bodys
                             )
 
                             if configs.max_generate_times:

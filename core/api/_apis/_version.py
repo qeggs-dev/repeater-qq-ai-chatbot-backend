@@ -12,6 +12,7 @@ versions = {
 
 version_router = APIRouter(prefix="/version", tags=["version"])
 
+@version_router.get("")
 @version_router.get("/")
 async def version():
     """

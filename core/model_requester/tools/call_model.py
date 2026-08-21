@@ -1,5 +1,4 @@
-import random
-
+from typing import Any
 from ...call_api.completions_api import (
     Request,
     Runtime,
@@ -106,6 +105,10 @@ class CallModel(ToolCallPacakage):
             OutputFormat.TEXT, 
             description="Format of the output data returned by the API (e.g., 'text')."
         )
+        extra_bodys: dict[str, Any] = Field(
+            default_factory=dict, 
+            description="Additional parameters to pass to the API call."
+        )
     
     class Result(BaseModel):
         model: SafeModelInfo = Field(description="The model used for the API call.")
@@ -143,6 +146,16 @@ class CallModel(ToolCallPacakage):
         if model.api_key is None:
             raise Exception("Model api key is not set")
 
+        extra_bodys: dict[str, Any] = {}
+        if self.global_configs.model.enable_user_extra_bodys:
+            extra_bodys.update(args.extra_bodys)
+        if self.global_configs.model.extra_bodys is not None:
+            extra_bodys.update(self.global_configs.model.extra_bodys)
+        if self.global_configs.model.enable_user_extra_bodys and self.user_configs.extra_bodys is not None:
+            extra_bodys.update(self.user_configs.extra_bodys)
+        if self.global_configs.model.extra_bodys_priority is not None:
+            extra_bodys.update(self.global_configs.model.extra_bodys_priority)
+
         request = Request(
             url = model.get_base_url(),
             limits = model.limits,
@@ -169,7 +182,8 @@ class CallModel(ToolCallPacakage):
             stream_options = StreamOptions(
                 include_obfuscation = self.global_configs.callapi.include_obfuscation,
                 include_usage = self.global_configs.callapi.include_usage
-            )
+            ),
+            extra_bodys = extra_bodys,
         )
         
         request_runtime = Runtime(

@@ -5,6 +5,7 @@ from fastapi.responses import ORJSONResponse
 from ....special_exception import HTTPException
 from ._response import ResponseModel
 
+@models_router.get("")
 @models_router.get("/")
 async def model_list(detailed_info: bool = Query(False)):
     server = RepeaterMain.get_now_server()

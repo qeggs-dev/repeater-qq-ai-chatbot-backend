@@ -47,6 +47,7 @@
           - `load_from_user_id` (str): 从指定用户ID加载配置数据
           - `save_to_user_id` (str): 将配置数据保存到指定用户ID
       - `stream` (bool): 是否流式返回（设置该值为 `true` 需要保证在配置中启用了流式处理器，否则会返回`503`错误码）
+      - `extra_bodys` (dict[str, Any]): 额外参数，用于传递给模型，具体参数根据模型定义，需保证启用 `model.enable_user_extra_bodys` 才能生效
   - **Response**
     - **type:** `JSON` | `JSONL STREAM`
     - **Content:**

@@ -1,3 +1,5 @@
+import os
+import httpx
 from typing import (
     Any,
     Callable,
@@ -25,6 +27,8 @@ from ..objects import (
     ImagesRequest,
     ImagesRuntime,
     ImagesResponse,
+    ImageDownloader,
+    
     Background,
     Image,
     OutputFormat,
@@ -37,8 +41,19 @@ from ..objects import (
 )
 
 class ImageGenerateClient:
-    def __init__(self, max_concurrency: int = 100):
+    def __init__(
+            self,
+            max_concurrency: int = 100,
+            download_chunk_size: int = 1024 * 1024 * 5,
+            file_name_prefix: str = "GeneratedImage_",
+            base_dir: str | os.PathLike = "./workspace/generated_images",
+            save_file_suffix: str = ".png"
+        ):
         self.coroutine_pool = CoroutinePool(max_concurrency)
+        self.download_chunk_size = download_chunk_size
+        self.file_name_prefix = file_name_prefix
+        self.base_dir = base_dir
+        self.save_file_suffix = save_file_suffix
     
     def none_to_omit(self, value: Any):
         if value is None:
@@ -46,7 +61,7 @@ class ImageGenerateClient:
         return value
     
     @staticmethod
-    def _get_client(request: ImagesRequest, runtime: ImagesRuntime) -> AsyncOpenAI:
+    def _get_client(request: ImagesRequest, runtime: ImagesRuntime) -> tuple[AsyncOpenAI, httpx.AsyncClient]:
         client_info = ClientInfo(
             url = request.url,
             proxy = request.proxy,
@@ -54,21 +69,21 @@ class ImageGenerateClient:
             timeout = request.timeout,
             encoding = request.encoding,
         )
-        client = runtime.client_pool.get_openai(
+        openai, client = runtime.client_pool.get_openai_and_client(
             client_info = client_info,
             api_key = request.key,
             params = request.params,
             headers = request.headers,
             cookies = request.cookies,
         )
-        return client
+        return openai, client
     
-    async def call(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
+    async def call(self, request: ImagesRequest, runtime: ImagesRuntime) -> tuple[AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse, ImageDownloader]:
         return await self.coroutine_pool.submit(
             self._call(request, runtime)
         )
     
-    async def _call(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
+    async def _call(self, request: ImagesRequest, runtime: ImagesRuntime) -> tuple[AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse, ImageDownloader]:
         func = None
         if request.images is None:
             func = self._call_generate_images
@@ -78,11 +93,29 @@ class ImageGenerateClient:
         if func is None:
             raise ValueError("Invalid request")
         
-        return await func(request, runtime)
+        openai, client = self._get_client(request, runtime)
 
+        result = await func(
+            client = openai,
+            request = request,
+            runtime = runtime
+        )
+        
+        return result, ImageDownloader(
+            response = result,
+            client = client,
+            download_chunk_size = self.download_chunk_size,
+            file_name_prefix = self.file_name_prefix,
+            base_dir = self.base_dir,
+            save_file_suffix = self.save_file_suffix
+        )
 
-    async def _call_generate_images(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
-        client: AsyncOpenAI = self._get_client(request, runtime)
+    async def _call_generate_images(
+            self,
+            client: AsyncOpenAI,
+            request: ImagesRequest,
+            runtime: ImagesRuntime
+        ) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
         response: OpenAIImagesResponse | AsyncStream[OpenAIImageGenStreamEvent] = await client.images.generate(
             prompt = request.prompt,
             background = self.none_to_omit(request.background),
@@ -110,8 +143,12 @@ class ImageGenerateClient:
 
         return parsed_response
     
-    async def _call_edit_images(self, request: ImagesRequest, runtime: ImagesRuntime) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
-        client: AsyncOpenAI = self._get_client(request, runtime)
+    async def _call_edit_images(
+            self,
+            client: AsyncOpenAI,
+            request: ImagesRequest,
+            runtime: ImagesRuntime
+        ) -> AsyncGenerator[PartialImageEvent | CompletedImageEvent, None] | ImagesResponse:
         files: list[bytes] = []
         if request.images is None:
             raise ValueError("Images must be provided")

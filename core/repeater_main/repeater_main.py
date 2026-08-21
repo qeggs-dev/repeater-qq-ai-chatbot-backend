@@ -70,19 +70,19 @@ class RepeaterMain:
         env_config_workers = self.env.int("WORKERS", None)
         env_config_reload = self.env.bool("RELOAD", False)
 
-        host: str | None = configs.server.host
+        host: str | None = configs.server.uvicorn.host
         if host is None:
             host = env_config_host
         
-        port: int | None = configs.server.port
+        port: int | None = configs.server.uvicorn.port
         if port is None:
             port = env_config_port
         
-        workers: int | None = configs.server.workers
+        workers: int | None = configs.server.uvicorn.workers
         if workers is None:
             workers = env_config_workers
         
-        reload: bool | None = configs.server.reload
+        reload: bool | None = configs.server.uvicorn.reload
         if reload is None:
             reload = env_config_reload
 
@@ -100,12 +100,16 @@ class RepeaterMain:
         
         if reload:
             logger.info("Server will reload on code change")
+
+        data = configs.server.uvicorn.model_dump()
+
+        data["host"] = host
+        data["port"] = port
+        data["workers"] = workers
+        data["reload"] = reload
         
         self.server_initer.init_server(
-            host = host,
-            port = port,
-            workers = workers,
-            reload = reload
+            **data
         )
 
         self.server_initer.init_middleware()
@@ -190,9 +194,16 @@ class RepeaterMain:
             asyncio_debug = configs.server.asyncio_debug
         
         try:
-            return asyncio.run(
-                self.run_server(),
-                debug = asyncio_debug
+            runner = asyncio.Runner(
+                debug = asyncio_debug,
+                loop_factory = self.server.server_config.get_loop_factory(),
+            )
+            logger.info(
+                "Usage of asyncio loop: {loop}",
+                loop = repr(runner.get_loop())
+            )
+            runner.run(
+                coro = self.run_server()
             )
         except KeyboardInterrupt:
             logger.info("Server shutting down...")

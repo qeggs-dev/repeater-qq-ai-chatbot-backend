@@ -1,0 +1,1 @@
+from .generated_image import generated_image

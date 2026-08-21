@@ -3,6 +3,7 @@ from ._runtime import ImagesRuntime
 from ._response import ImagesResponse
 from ._partial_image_event import PartialImageEvent
 from ._completed_image_event import CompletedImageEvent
+from ._downloader import ImageDownloader
 
 from .auxiliary.background import Background
 from .auxiliary.moderation import Moderation
@@ -15,6 +16,9 @@ from .auxiliary.image import Image
 from .auxiliary.token_usage import (
     ImageTokenUsage,
     ImageUsageTokensDetails
+)
+from .auxiliary.stream_usage import (
+    StreamUsage
 )
 from .auxiliary.files import (
     PathFile,
@@ -29,6 +33,8 @@ __all__ = [
     "ImagesResponse",
     "PartialImageEvent",
     "CompletedImageEvent",
+    "ImageDownloader",
+    
     "Background",
     "Moderation",
     "OutputFormat",
@@ -39,6 +45,7 @@ __all__ = [
     "Image",
     "ImageTokenUsage",
     "ImageUsageTokensDetails",
+    "StreamUsage",
     "PathFile",
     "UrlFile",
     "Base64File",

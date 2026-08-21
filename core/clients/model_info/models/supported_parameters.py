@@ -49,3 +49,15 @@ class SupportedParameters(StrEnum):
     VERBOSITY = "verbosity"
     LOGIT_BIAS = "logit_bias"
     WEB_SEARCH_OPTIONS = "web_search_options"
+
+    # === 附加其他常见 ===
+    PROMPT = "prompt"
+    DURATION = "duration"
+    RESOLUTION = "resolution"
+    ASPECT_RATIO = "aspect_ratio"
+    SIZE = "size"
+    GENERATE_AUDIO = "generate_audio"
+    FRAME_IMAGES = "frame_images"
+    INPUT_REFERENCES = "input_references"
+    CALLBACK_URL = "callback_url"
+    PROVIDER = "provider"

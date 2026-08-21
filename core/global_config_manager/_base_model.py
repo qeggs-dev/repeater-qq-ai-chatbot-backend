@@ -5,6 +5,7 @@ class GlobalConfigs(BaseModel):
     blacklist: BacklistConfig = Field(default_factory=BacklistConfig)
     callapi: CallAPIConfig = Field(default_factory=CallAPIConfig)
     context: ContextConfig = Field(default_factory=ContextConfig)
+    generated_images: GeneratedImagesConfig = Field(default_factory=GeneratedImagesConfig)
     global_exception_handler: GlobalExceptionHandlerConfig = Field(default_factory=GlobalExceptionHandlerConfig)
     licenses: LicensesConfig = Field(default_factory=LicensesConfig)
     logger: LoggerConfig = Field(default_factory=LoggerConfig)

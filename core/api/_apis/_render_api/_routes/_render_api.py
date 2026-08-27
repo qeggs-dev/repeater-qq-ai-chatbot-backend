@@ -83,14 +83,21 @@ async def render(
     html_template_encoding = global_configs.render.markdown.html_template_file_encoding
     html_template_name = config.render_html_template if config.render_html_template is not None else global_configs.render.markdown.default_html_template
     html_template_suffix = global_configs.render.markdown.html_template_suffix
-    title = config.render_title if config.render_title is not None else global_configs.render.markdown.title
-
     width = request.width if request.width is not None else global_configs.render.markdown.width
-    if request.document_bottom_comment:
-        document_bottom_comment = request.document_bottom_comment
-    else:
-        document_bottom_comment = config.render_document_bottom_comment if config.render_document_bottom_comment is not None else global_configs.render.markdown.document_bottom_comment
     environment = global_configs.text_template.sandbox.get_jinja_env()
+
+
+    title = request.title
+    if title is None:
+        title = config.render_title
+    if title is None:
+        title = global_configs.render.markdown.title
+
+    document_bottom_comment = request.document_bottom_comment
+    if document_bottom_comment is None:
+        document_bottom_comment = config.render_document_bottom_comment
+    if document_bottom_comment is None:
+        document_bottom_comment = global_configs.render.markdown.document_bottom_comment
 
     no_pre_labels = global_configs.render.markdown.no_pre_labels
     if no_pre_labels is None:

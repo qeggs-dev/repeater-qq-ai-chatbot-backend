@@ -8,6 +8,7 @@
     - **type:** `JSON`
     - **Content:**
       - `text` (str): 要渲染的文本（必填）
+      - `title` (str): 渲染标题
       - `style` (str): 渲染风格
       - `image_expiry_time` (float): 图片链接有效时长
       - `html_template`(str): HTML模板名称

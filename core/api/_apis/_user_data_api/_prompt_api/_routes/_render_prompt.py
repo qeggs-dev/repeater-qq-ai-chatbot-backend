@@ -1,15 +1,23 @@
 from ......repeater_main import RepeaterMain
 from ......global_config_manager import ConfigManager
+from ......assist_struct import RequestUserInfo
 from .._router import prompt_router
-from .._requests import RenderPromptRequest
 from fastapi.responses import (
     PlainTextResponse
 )
+from fastapi import Query
 from loguru import logger
 
 @prompt_router.get("/render/{user_id}")
 @prompt_router.get("/render/{user_id}.md")
-async def render_prompt(user_id: str, request: RenderPromptRequest):
+async def render_prompt(
+    user_id: str,
+    model_id: str | list[str] | None = Query(None),
+    username: str | None = Query(None),
+    nickname: str | None = Query(None),
+    age: int | float | None = Query(None),
+    gender: str | None = Query(None)
+):
     """
     Render prompt
 
@@ -24,7 +32,6 @@ async def render_prompt(user_id: str, request: RenderPromptRequest):
     context_loader = server.core.get_context_loader()
     user_config = await runtime.user_config_manager.load(user_id)
     global_config = ConfigManager.get_configs()
-    model_id = request.model_id
     if model_id is None:
         model_id = user_config.model_id
     if model_id is None:
@@ -37,7 +44,12 @@ async def render_prompt(user_id: str, request: RenderPromptRequest):
             user_config = user_config,
             global_config = global_config,
             model = model,
-            user_info = request.user_info
+            user_info = RequestUserInfo(
+                username = username,
+                nickname = nickname,
+                age = age,
+                gender = gender
+            )
         )
     )
 

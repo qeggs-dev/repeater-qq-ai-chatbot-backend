@@ -94,7 +94,7 @@
 `资源服务器数据` 则需要部署[资源服务器](https://github.com/qeggs-dev/static-resources-server)
 并让 Repeater 访问资源服务器的数据
 **注意：静态资源本身并不与服务器属于一个仓库**
-**需要从[静态资源存储库](https://github.com/qeggs-dev/repeater-static-data)中下载静态资源**
+**需要从[静态资源存储库](https://github.com/repeater-bot/repeater-static-data)中下载静态资源**
 
 也将资源放在 Repeater 主机的 `./static` 目录中
 Repeater 内置了一个简单的静态资源服务器

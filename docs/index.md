@@ -52,7 +52,7 @@
 
 ## Prompt
 
-该项目在 [`repeater-static-data/prompt/presets/official`](https://github.com/qeggs-dev/repeater-static-data/tree/main/prompt/presets/official) 中
+该项目在 [`repeater-static-data/prompt/presets/official`](https://github.com/repeater-bot/repeater-static-data/tree/main/prompt/presets/official) 中
 提供了多个预设的Prompt
 通常你可以用这些文件作为模板
 

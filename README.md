@@ -136,6 +136,6 @@ Repeater 的功能拓展主要靠编写对应领域的 Client
 ## 相关仓库
 
 [Sloves_Starter](https://github.com/qeggs-dev/Sloves_Starter)
-[Repeater Nexus](https://github.com/qeggs-dev/repeater-nexus)
-[Repeater Modelinfo Server](https://github.com/qeggs-dev/repeater-modelinfo-server)
-[Static Resources Server](https://github.com/qeggs-dev/static-resources-server)
+[Repeater Nexus](https://github.com/repeater-bot/repeater-nexus)
+[Repeater Modelinfo Server](https://github.com/repeater-bot/repeater-modelinfo-server)
+[Static Resources Server](https://github.com/repeater-bot/static-resources-server)
